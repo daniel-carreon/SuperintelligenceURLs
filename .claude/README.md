@@ -1,0 +1,1 @@
+# LinkProxy Claude Code Config
