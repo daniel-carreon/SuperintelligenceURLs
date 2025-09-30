@@ -9,10 +9,16 @@ from datetime import datetime
 class FolderService:
     """Service para gestionar folders y organización de links"""
 
-    def __init__(self):
-        # In-memory storage (migrar a Supabase después)
-        self.folders: Dict[str, dict] = {}
-        self.folder_links: Dict[str, List[str]] = {}  # folder_id -> [url_ids]
+    def __init__(self, folder_repository=None):
+        if folder_repository:
+            # Use Supabase repository
+            self.repo = folder_repository
+            self.use_db = True
+        else:
+            # Fallback to in-memory storage
+            self.folders: Dict[str, dict] = {}
+            self.folder_links: Dict[str, List[str]] = {}
+            self.use_db = False
 
     def generate_folder_id(self) -> str:
         """Generate unique folder ID"""
