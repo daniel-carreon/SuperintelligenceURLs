@@ -1,16 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getFolderTree, createFolder, type Folder } from '@/lib/folders-api';
+import { getFolderTree, createFolder, updateFolder, type Folder } from '@/lib/folders-api';
 import { GlassCard } from './ui/GlassCard';
 import Button from './ui/Button';
-import { FolderPlus, ChevronDown, ChevronRight } from 'lucide-react';
+import { FolderPlus, ChevronDown, ChevronRight, Pencil } from 'lucide-react';
 
 export default function FoldersSidebar() {
   const [folders, setFolders] = useState<Folder[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingFolder, setEditingFolder] = useState<Folder | null>(null);
 
   useEffect(() => {
     loadFolders();
@@ -44,11 +45,13 @@ export default function FoldersSidebar() {
     return (
       <div key={folder.id} style={{ marginLeft: `${level * 16}px` }}>
         <div
-          className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 cursor-pointer transition-colors group"
-          onClick={() => hasSubfolders && toggleFolder(folder.id)}
+          className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors group"
         >
           {hasSubfolders && (
-            <button className="text-gray-400 hover:text-white transition-colors">
+            <button
+              className="text-gray-400 hover:text-white transition-colors"
+              onClick={() => toggleFolder(folder.id)}
+            >
               {isExpanded ? (
                 <ChevronDown className="w-4 h-4" />
               ) : (
@@ -73,6 +76,16 @@ export default function FoldersSidebar() {
               {folder.link_count}
             </span>
           )}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditingFolder(folder);
+            }}
+            className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-neon-cyan"
+            title="Edit folder"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+          </button>
         </div>
 
         {hasSubfolders && isExpanded && (
@@ -141,6 +154,18 @@ export default function FoldersSidebar() {
           }}
         />
       )}
+
+      {/* Edit Folder Modal */}
+      {editingFolder && (
+        <EditFolderModal
+          folder={editingFolder}
+          onClose={() => setEditingFolder(null)}
+          onSuccess={() => {
+            loadFolders();
+            setEditingFolder(null);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -186,11 +211,11 @@ function CreateFolderModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
       <GlassCard
         intensity="strong"
         glow="cyan"
-        className="w-full max-w-md animate-scale-in"
+        className="w-full max-w-md animate-scale-in relative z-[101]"
       >
         <div className="p-6 space-y-6">
           <div>
@@ -284,6 +309,160 @@ function CreateFolderModal({
                 isLoading={loading}
               >
                 Create Folder
+              </Button>
+            </div>
+          </form>
+        </div>
+      </GlassCard>
+    </div>
+  );
+}
+
+// Edit Folder Modal
+function EditFolderModal({
+  folder,
+  onClose,
+  onSuccess,
+}: {
+  folder: Folder;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [name, setName] = useState(folder.name);
+  const [color, setColor] = useState(folder.color);
+  const [icon, setIcon] = useState(folder.icon);
+  const [loading, setLoading] = useState(false);
+
+  const colors = [
+    { name: 'Cyan', value: '#00fff5' },
+    { name: 'Blue', value: '#0066ff' },
+    { name: 'Purple', value: '#8b5cf6' },
+    { name: 'Pink', value: '#ff006e' },
+    { name: 'Orange', value: '#ff6b35' },
+    { name: 'Green', value: '#10b981' },
+  ];
+
+  const icons = ['📁', '👥', '💎', '💼', '🎥', '🎬', '🎙️', '📚', '💻', '🚀'];
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+
+    setLoading(true);
+    try {
+      await updateFolder(folder.id, {
+        name: name.trim(),
+        color,
+        icon,
+      });
+      onSuccess();
+    } catch (error) {
+      console.error('Failed to update folder:', error);
+      alert('Failed to update folder');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+      <GlassCard
+        intensity="strong"
+        glow="cyan"
+        className="w-full max-w-md animate-scale-in relative z-[101]"
+      >
+        <div className="p-6 space-y-6">
+          <div>
+            <h3 className="text-2xl font-bold text-gradient-holographic mb-2">
+              Edit Folder
+            </h3>
+            <p className="text-sm text-gray-400">
+              Update folder name, color, or icon
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Name Input */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Folder Name
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="My Folder"
+                className="w-full h-12 px-4 glass rounded-lg text-white placeholder:text-gray-500 focus:glass-strong focus:outline-none focus:ring-2 focus:ring-neon-cyan/30"
+                required
+              />
+            </div>
+
+            {/* Icon Picker */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Icon
+              </label>
+              <div className="grid grid-cols-5 gap-2">
+                {icons.map((emoji) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    onClick={() => setIcon(emoji)}
+                    className={`p-3 rounded-lg text-2xl transition-all ${
+                      icon === emoji
+                        ? 'glass-strong ring-2 ring-neon-cyan scale-110'
+                        : 'glass hover:glass-strong'
+                    }`}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Color Picker */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Color
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {colors.map((c) => (
+                  <button
+                    key={c.value}
+                    type="button"
+                    onClick={() => setColor(c.value)}
+                    className={`p-3 rounded-lg transition-all ${
+                      color === c.value
+                        ? 'glass-strong ring-2 ring-white scale-105'
+                        : 'glass hover:glass-strong'
+                    }`}
+                    style={{ backgroundColor: c.value }}
+                  >
+                    <span className="text-xs font-semibold text-white">
+                      {c.name}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-4">
+              <Button
+                type="button"
+                variant="secondary"
+                className="flex-1"
+                onClick={onClose}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="primary"
+                className="flex-1"
+                isLoading={loading}
+              >
+                Save Changes
               </Button>
             </div>
           </form>
