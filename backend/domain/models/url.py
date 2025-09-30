@@ -110,6 +110,13 @@ class ClickBase(SQLModel):
     referrer_domain: Optional[str] = Field(None, max_length=255)
     referrer_type: Optional[str] = Field(None, max_length=20)
 
+    # Advanced analytics fields
+    video_id: Optional[str] = Field(None, max_length=50, description="YouTube/TikTok video ID if from video")
+    video_platform: Optional[str] = Field(None, max_length=20, description="youtube/tiktok/instagram")
+    platform: Optional[str] = Field(None, max_length=50, description="Detailed platform (iOS, Android, Windows 11, etc)")
+    is_returning_visitor: bool = Field(default=False, description="Whether visitor clicked this link before")
+    session_id: Optional[str] = Field(None, max_length=100, description="Session identifier for visitor tracking")
+
 
 class Click(ClickBase, table=True):
     """Click table model for analytics database"""

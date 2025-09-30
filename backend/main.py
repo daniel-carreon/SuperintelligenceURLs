@@ -23,6 +23,9 @@ from infrastructure.external_apis.user_agent_parser import parse_user_agent
 # Import folder service
 from application.services.folder_service import FolderService
 
+# Import click tracker service
+from application.services.click_tracker_service import click_tracker_service
+
 # Temporary in-memory storage for MVP
 urls_db = {}
 clicks_db = []
@@ -180,12 +183,23 @@ async def redirect_url(short_code: str, request: Request):
             detail="Short URL is inactive"
         )
 
-    # Track click analytics (async)
-    await track_click(short_code, url_record.id, request, start_time)
+    # Track click analytics with advanced features (async)
+    click_data = await click_tracker_service.track_click(
+        url_id=url_record.id,
+        short_code=short_code,
+        request=request
+    )
 
     # Update URL statistics
     url_record.click_count += 1
     url_record.last_clicked_at = datetime.utcnow()
+
+    # Also store in old format for backward compatibility
+    clicks_db.append({
+        'short_code': short_code,
+        'ip_address': click_data.ip_address,
+        'device_type': click_data.device_type
+    })
 
     # Performance logging
     redirect_time = (time.perf_counter() - start_time) * 1000
@@ -200,7 +214,7 @@ async def redirect_url(short_code: str, request: Request):
 
 @app.get("/analytics/{short_code}")
 async def get_analytics(short_code: str):
-    """Get analytics for a specific short URL"""
+    """Get analytics for a specific short URL with advanced features"""
     if short_code not in urls_db:
         raise HTTPException(
             status_code=404,
@@ -209,27 +223,23 @@ async def get_analytics(short_code: str):
 
     url_record = urls_db[short_code]
 
-    # Filter clicks for this URL
-    url_clicks = [click for click in clicks_db if click['short_code'] == short_code]
-
-    # Calculate analytics
-    total_clicks = len(url_clicks)
-    unique_ips = len(set(click['ip_address'] for click in url_clicks if click['ip_address']))
-
-    # Device breakdown
-    device_stats = {}
-    for click in url_clicks:
-        device = click.get('device_type', 'unknown')
-        device_stats[device] = device_stats.get(device, 0) + 1
+    # Get advanced analytics summary from click tracker service
+    analytics = click_tracker_service.get_analytics_summary(url_record.id)
 
     return {
         "short_code": short_code,
         "original_url": url_record.original_url,
         "created_at": url_record.created_at.isoformat(),
-        "total_clicks": total_clicks,
-        "unique_visitors": unique_ips,
-        "device_breakdown": device_stats,
-        "recent_clicks": url_clicks[-10:] if url_clicks else []
+        "total_clicks": analytics['total_clicks'],
+        "unique_visitors": analytics['unique_visitors'],
+        "returning_visitors": analytics['returning_visitors'],  # NEW
+        "device_breakdown": analytics['device_breakdown'],
+        "country_breakdown": analytics['country_breakdown'],
+        "city_breakdown": analytics['city_breakdown'],  # NEW - city-level geo
+        "platform_breakdown": analytics['platform_breakdown'],  # NEW - detailed platforms
+        "video_sources": analytics['video_sources'],  # NEW - video attribution
+        "time_patterns": analytics['time_patterns'],  # NEW - time analysis
+        "referrer_breakdown": analytics['referrer_breakdown']
     }
 
 

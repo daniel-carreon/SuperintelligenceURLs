@@ -75,6 +75,9 @@ class UserAgentParser:
             # Bot detection
             is_bot = self._is_bot(user_agent_string)
 
+            # Enhanced platform detection
+            platform = self._detect_detailed_platform(os_info, parsed_ua)
+
             return {
                 'user_agent': user_agent_string,
                 'is_bot': is_bot,
@@ -87,6 +90,7 @@ class UserAgentParser:
                 'os_name': os_info.get('name'),
                 'os_version': os_info.get('version'),
                 'os_family': os_info.get('family'),
+                'platform': platform,  # Detailed platform string
                 'is_mobile': device_type in ['mobile', 'tablet'],
                 'is_tablet': device_type == 'tablet',
                 'is_desktop': device_type == 'desktop',
@@ -209,6 +213,72 @@ class UserAgentParser:
         # Check against compiled bot patterns
         return any(pattern.search(user_agent_string) for pattern in self.compiled_bot_patterns)
 
+    def _detect_detailed_platform(self, os_info: dict, parsed_ua) -> str:
+        """
+        Detect detailed platform information (OS + version)
+        Returns user-friendly platform strings like "iOS 17.5", "Windows 11", "Android 14"
+        """
+        os_name = os_info.get('name', 'Unknown')
+        os_version = os_info.get('version', '')
+
+        # iOS platform (iPhone/iPad)
+        if 'iOS' in os_name or 'iPhone' in os_name:
+            if os_version:
+                return f"iOS {os_version}"
+            return "iOS"
+
+        # macOS platform
+        if 'Mac OS' in os_name or 'macOS' in os_name:
+            if os_version:
+                # Map macOS versions to names
+                major_version = os_version.split('.')[0] if '.' in os_version else os_version
+                macos_names = {
+                    '14': 'Sonoma',
+                    '13': 'Ventura',
+                    '12': 'Monterey',
+                    '11': 'Big Sur',
+                    '10.15': 'Catalina'
+                }
+                name = macos_names.get(major_version, '')
+                if name:
+                    return f"macOS {name}"
+                return f"macOS {os_version}"
+            return "macOS"
+
+        # Windows platform
+        if 'Windows' in os_name:
+            if os_version:
+                # Map Windows NT versions to Windows versions
+                if '10.0' in os_version:
+                    return "Windows 11" if int(os_version.split('.')[-1] or '0') >= 22000 else "Windows 10"
+                elif '6.3' in os_version:
+                    return "Windows 8.1"
+                elif '6.2' in os_version:
+                    return "Windows 8"
+                elif '6.1' in os_version:
+                    return "Windows 7"
+                return f"Windows {os_version}"
+            return "Windows"
+
+        # Android platform
+        if 'Android' in os_name:
+            if os_version:
+                return f"Android {os_version}"
+            return "Android"
+
+        # Linux distributions
+        if 'Linux' in os_name or 'Ubuntu' in os_name:
+            if 'Ubuntu' in os_name:
+                return f"Ubuntu {os_version}" if os_version else "Ubuntu"
+            return "Linux"
+
+        # Chrome OS
+        if 'Chrome OS' in os_name:
+            return f"Chrome OS {os_version}" if os_version else "Chrome OS"
+
+        # Fallback to OS name
+        return os_name if os_name != 'Unknown' else 'Unknown Platform'
+
     def _get_unknown_device(self, user_agent_string: str = None) -> dict:
         """
         Return default data for unknown devices
@@ -225,6 +295,7 @@ class UserAgentParser:
             'os_name': 'Unknown',
             'os_version': None,
             'os_family': 'Unknown',
+            'platform': 'Unknown Platform',
             'is_mobile': False,
             'is_tablet': False,
             'is_desktop': False,
