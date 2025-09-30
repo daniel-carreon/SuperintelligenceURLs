@@ -32,9 +32,20 @@ class URLRepository:
         return response.data[0] if response.data else None
 
     def get_all(self, limit: int = 100) -> List[dict]:
-        """Obtener todas las URLs activas"""
+        """Obtener todas las URLs activas con folder_id"""
+        # Get all URLs
         response = self.table.select('*').eq('is_active', True).order('created_at', desc=True).limit(limit).execute()
-        return response.data
+        urls = response.data
+
+        # Get folder assignments
+        folder_links_response = self.client.table('folder_links').select('url_id, folder_id').execute()
+        folder_map = {link['url_id']: link['folder_id'] for link in folder_links_response.data}
+
+        # Add folder_id to each URL
+        for url in urls:
+            url['folder_id'] = folder_map.get(url['id'])
+
+        return urls
 
     def update_click_count(self, url_id: str):
         """Incrementar click count"""

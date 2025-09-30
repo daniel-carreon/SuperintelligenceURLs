@@ -56,7 +56,7 @@ export default function AnalyticsPage() {
       }))
     : [];
 
-  const referrerData = analytics?.recent_clicks
+  const referrerData = analytics?.recent_clicks && Array.isArray(analytics.recent_clicks)
     ? Object.entries(
         analytics.recent_clicks.reduce((acc, click) => {
           acc[click.referrer_source] = (acc[click.referrer_source] || 0) + 1;
@@ -65,7 +65,7 @@ export default function AnalyticsPage() {
       ).map(([name, value]) => ({ name, clicks: value }))
     : [];
 
-  const countryData = analytics?.recent_clicks
+  const countryData = analytics?.recent_clicks && Array.isArray(analytics.recent_clicks)
     ? Object.entries(
         analytics.recent_clicks.reduce((acc, click) => {
           acc[click.country_name] = (acc[click.country_name] || 0) + 1;
@@ -355,7 +355,8 @@ export default function AnalyticsPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/5">
-                        {analytics.recent_clicks.map((click, idx) => (
+                        {analytics?.recent_clicks && Array.isArray(analytics.recent_clicks) && analytics.recent_clicks.length > 0 ? (
+                          analytics.recent_clicks.map((click, idx) => (
                           <tr key={click.id} className="hover:bg-white/5 transition-colors group">
                             <td className="px-4 py-4 text-gray-300 font-mono text-xs">
                               {new Date(click.clicked_at).toLocaleString()}
@@ -382,7 +383,17 @@ export default function AnalyticsPage() {
                               </span>
                             </td>
                           </tr>
-                        ))}
+                        ))
+                        ) : (
+                          <tr>
+                            <td colSpan={5} className="px-4 py-12 text-center">
+                              <div className="text-gray-400">
+                                <Activity className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                                <p className="text-sm">No clicks yet. Share your link to start tracking!</p>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
                       </tbody>
                     </table>
                   </div>

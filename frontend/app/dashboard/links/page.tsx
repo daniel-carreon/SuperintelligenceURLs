@@ -7,38 +7,19 @@ import { Link2, Copy, BarChart3, ExternalLink, Check, Sparkles, TrendingUp, Fold
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { getAllFolders, assignLinkToFolder, type Folder } from '@/lib/folders-api';
-
-// Mock data - will be replaced with real data from backend
-const mockLinks = [
-  {
-    id: '1',
-    short_code: 'abc123',
-    original_url: 'https://example.com/very-long-url-that-needs-shortening',
-    title: 'Example Website',
-    created_at: '2025-09-29T10:00:00Z',
-    click_count: 42,
-    domain: 'example.com',
-  },
-  {
-    id: '2',
-    short_code: 'xyz789',
-    original_url: 'https://github.com/my-awesome-project',
-    title: 'GitHub Project',
-    created_at: '2025-09-28T15:30:00Z',
-    click_count: 127,
-    domain: 'github.com',
-  },
-];
+import { getAllURLs, type URLResponse } from '@/lib/api';
 
 export default function LinksPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [folders, setFolders] = useState<Folder[]>([]);
   const [showFolderDropdown, setShowFolderDropdown] = useState<string | null>(null);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
-  const [links, setLinks] = useState(mockLinks);
+  const [links, setLinks] = useState<URLResponse[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadFolders();
+    loadLinks();
   }, []);
 
   const loadFolders = async () => {
@@ -47,6 +28,19 @@ export default function LinksPage() {
       setFolders(data);
     } catch (error) {
       console.error('Failed to load folders:', error);
+    }
+  };
+
+  const loadLinks = async () => {
+    try {
+      setLoading(true);
+      const data = await getAllURLs();
+      setLinks(data.urls);
+      console.log(`✅ Loaded ${data.total} links from backend`);
+    } catch (error) {
+      console.error('Failed to load links:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -140,13 +134,16 @@ export default function LinksPage() {
           </div>
 
           <div className="space-y-6">
-            {(() => {
-              // Filter links based on selected folder
-              const filteredLinks = selectedFolder
+            {loading ? (
+              <GlassCard intensity="strong" className="text-center py-20">
+                <div className="w-16 h-16 border-4 border-neon-cyan border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                <p className="text-gray-400">Loading your links...</p>
+              </GlassCard>
+            ) : (
+              (selectedFolder
                 ? links.filter(link => link.folder_id === selectedFolder)
-                : links;
-
-              return filteredLinks.map((link, idx) => (
+                : links
+              ).map((link, idx) => (
               <GlassCard key={link.id} glow="cyan" className="relative overflow-hidden group animate-fade-in" style={{ animationDelay: `${idx * 100}ms` }}>
                 <div className="absolute inset-0 gradient-holographic opacity-0 group-hover:opacity-5 transition-opacity duration-300" />
                 <div className="relative z-10 flex items-start justify-between">
@@ -275,11 +272,11 @@ export default function LinksPage() {
                   </div>
                 </div>
               </GlassCard>
-              ));
-            })()}
+              ))
+            )}
           </div>
 
-          {links.length === 0 && (
+          {!loading && links.length === 0 && (
             <GlassCard intensity="strong" className="text-center py-20 relative overflow-hidden">
               <div className="absolute inset-0 gradient-holographic opacity-5" />
               <div className="relative z-10">

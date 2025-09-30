@@ -71,6 +71,10 @@ class URLCreate(SQLModel):
         max_length=500,
         description="Optional page title"
     )
+    folder_id: Optional[str] = Field(
+        None,
+        description="Optional folder ID to assign link to"
+    )
     is_active: bool = Field(
         default=True,
         description="Whether URL is active and can be accessed"

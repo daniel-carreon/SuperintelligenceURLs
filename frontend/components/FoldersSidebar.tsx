@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { getFolderTree, createFolder, updateFolder, type Folder } from '@/lib/folders-api';
 import { GlassCard } from './ui/GlassCard';
 import Button from './ui/Button';
+import { HexColorPicker } from './ui/HexColorPicker';
 import { FolderPlus, ChevronDown, ChevronRight, Pencil } from 'lucide-react';
 
 interface FoldersSidebarProps {
@@ -190,7 +191,7 @@ export default function FoldersSidebar({ selectedFolder, onSelectFolder }: Folde
   );
 }
 
-// Simple Create Folder Modal
+// Simplified Create Folder Modal - Minimal UI
 function CreateFolderModal({
   onClose,
   onSuccess,
@@ -200,19 +201,7 @@ function CreateFolderModal({
 }) {
   const [name, setName] = useState('');
   const [color, setColor] = useState('#00fff5');
-  const [icon, setIcon] = useState('📁');
   const [loading, setLoading] = useState(false);
-
-  const colors = [
-    { name: 'Cyan', value: '#00fff5' },
-    { name: 'Blue', value: '#0066ff' },
-    { name: 'Purple', value: '#8b5cf6' },
-    { name: 'Pink', value: '#ff006e' },
-    { name: 'Orange', value: '#ff6b35' },
-    { name: 'Green', value: '#10b981' },
-  ];
-
-  const icons = ['📁', '👥', '💎', '💼', '🎥', '🎬', '🎙️', '📚', '💻', '🚀'];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -220,7 +209,7 @@ function CreateFolderModal({
 
     setLoading(true);
     try {
-      await createFolder({ name: name.trim(), color, icon });
+      await createFolder({ name: name.trim(), color, icon: '📁' });
       onSuccess();
     } catch (error) {
       console.error('Failed to create folder:', error);
@@ -237,7 +226,7 @@ function CreateFolderModal({
         glow="cyan"
         className="w-full max-w-md animate-scale-in relative z-[101]"
       >
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-5">
           <div>
             <h3 className="text-2xl font-bold text-gradient-holographic mb-2">
               Create Folder
@@ -247,7 +236,7 @@ function CreateFolderModal({
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {/* Name Input */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -260,56 +249,16 @@ function CreateFolderModal({
                 placeholder="My Folder"
                 className="w-full h-12 px-4 glass rounded-lg text-white placeholder:text-gray-500 focus:glass-strong focus:outline-none focus:ring-2 focus:ring-neon-cyan/30"
                 required
+                autoFocus
               />
             </div>
 
-            {/* Icon Picker */}
+            {/* Hex Color Picker */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Icon
-              </label>
-              <div className="grid grid-cols-5 gap-2">
-                {icons.map((emoji) => (
-                  <button
-                    key={emoji}
-                    type="button"
-                    onClick={() => setIcon(emoji)}
-                    className={`p-3 rounded-lg text-2xl transition-all ${
-                      icon === emoji
-                        ? 'glass-strong ring-2 ring-neon-cyan scale-110'
-                        : 'glass hover:glass-strong'
-                    }`}
-                  >
-                    {emoji}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Color Picker */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-3">
                 Color
               </label>
-              <div className="grid grid-cols-3 gap-2">
-                {colors.map((c) => (
-                  <button
-                    key={c.value}
-                    type="button"
-                    onClick={() => setColor(c.value)}
-                    className={`p-3 rounded-lg transition-all ${
-                      color === c.value
-                        ? 'glass-strong ring-2 ring-white scale-105'
-                        : 'glass hover:glass-strong'
-                    }`}
-                    style={{ backgroundColor: c.value }}
-                  >
-                    <span className="text-xs font-semibold text-white">
-                      {c.name}
-                    </span>
-                  </button>
-                ))}
-              </div>
+              <HexColorPicker value={color} onChange={setColor} />
             </div>
 
             {/* Actions */}
@@ -338,7 +287,7 @@ function CreateFolderModal({
   );
 }
 
-// Edit Folder Modal
+// Simplified Edit Folder Modal - Minimal UI
 function EditFolderModal({
   folder,
   onClose,
@@ -350,19 +299,7 @@ function EditFolderModal({
 }) {
   const [name, setName] = useState(folder.name);
   const [color, setColor] = useState(folder.color);
-  const [icon, setIcon] = useState(folder.icon);
   const [loading, setLoading] = useState(false);
-
-  const colors = [
-    { name: 'Cyan', value: '#00fff5' },
-    { name: 'Blue', value: '#0066ff' },
-    { name: 'Purple', value: '#8b5cf6' },
-    { name: 'Pink', value: '#ff006e' },
-    { name: 'Orange', value: '#ff6b35' },
-    { name: 'Green', value: '#10b981' },
-  ];
-
-  const icons = ['📁', '👥', '💎', '💼', '🎥', '🎬', '🎙️', '📚', '💻', '🚀'];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -373,12 +310,38 @@ function EditFolderModal({
       await updateFolder(folder.id, {
         name: name.trim(),
         color,
-        icon,
+        icon: folder.icon, // Keep existing icon
       });
       onSuccess();
     } catch (error) {
       console.error('Failed to update folder:', error);
       alert('Failed to update folder');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm(`⚠️ Delete folder "${folder.name}"?\n\nAll links in this folder will also be deleted. This cannot be undone.`)) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${API_URL}/folders/${folder.id}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete folder');
+      }
+
+      alert('Folder deleted successfully!');
+      onSuccess();
+    } catch (error) {
+      console.error('Failed to delete folder:', error);
+      alert('Failed to delete folder');
     } finally {
       setLoading(false);
     }
@@ -391,17 +354,17 @@ function EditFolderModal({
         glow="cyan"
         className="w-full max-w-md animate-scale-in relative z-[101]"
       >
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-5">
           <div>
             <h3 className="text-2xl font-bold text-gradient-holographic mb-2">
               Edit Folder
             </h3>
             <p className="text-sm text-gray-400">
-              Update folder name, color, or icon
+              Update folder name or color
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {/* Name Input */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -414,60 +377,36 @@ function EditFolderModal({
                 placeholder="My Folder"
                 className="w-full h-12 px-4 glass rounded-lg text-white placeholder:text-gray-500 focus:glass-strong focus:outline-none focus:ring-2 focus:ring-neon-cyan/30"
                 required
+                autoFocus
               />
             </div>
 
-            {/* Icon Picker */}
+            {/* Hex Color Picker */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Icon
-              </label>
-              <div className="grid grid-cols-5 gap-2">
-                {icons.map((emoji) => (
-                  <button
-                    key={emoji}
-                    type="button"
-                    onClick={() => setIcon(emoji)}
-                    className={`p-3 rounded-lg text-2xl transition-all ${
-                      icon === emoji
-                        ? 'glass-strong ring-2 ring-neon-cyan scale-110'
-                        : 'glass hover:glass-strong'
-                    }`}
-                  >
-                    {emoji}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Color Picker */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-3">
                 Color
               </label>
-              <div className="grid grid-cols-3 gap-2">
-                {colors.map((c) => (
-                  <button
-                    key={c.value}
-                    type="button"
-                    onClick={() => setColor(c.value)}
-                    className={`p-3 rounded-lg transition-all ${
-                      color === c.value
-                        ? 'glass-strong ring-2 ring-white scale-105'
-                        : 'glass hover:glass-strong'
-                    }`}
-                    style={{ backgroundColor: c.value }}
-                  >
-                    <span className="text-xs font-semibold text-white">
-                      {c.name}
-                    </span>
-                  </button>
-                ))}
-              </div>
+              <HexColorPicker value={color} onChange={setColor} />
+            </div>
+
+            {/* Delete Warning */}
+            <div className="border-t border-white/10 pt-4">
+              <p className="text-xs text-gray-500 mb-3">
+                Danger Zone: Deleting this folder will remove all links assigned to it.
+              </p>
+              <Button
+                type="button"
+                variant="danger"
+                className="w-full"
+                onClick={handleDelete}
+                isLoading={loading}
+              >
+                Delete Folder
+              </Button>
             </div>
 
             {/* Actions */}
-            <div className="flex gap-3 pt-4">
+            <div className="flex gap-3">
               <Button
                 type="button"
                 variant="secondary"

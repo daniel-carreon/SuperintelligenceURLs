@@ -1,19 +1,35 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createShortURL, URLResponse } from '@/lib/api';
+import { getAllFolders, type Folder } from '@/lib/folders-api';
 import Button from './ui/Button';
 import Input from './ui/Input';
-import { Copy, Check, ExternalLink, BarChart3 } from 'lucide-react';
+import { Copy, Check, ExternalLink, BarChart3, FolderInput } from 'lucide-react';
 import Link from 'next/link';
 
 export default function URLShortener() {
   const [url, setUrl] = useState('');
   const [title, setTitle] = useState('');
+  const [folderId, setFolderId] = useState<string>('');
+  const [folders, setFolders] = useState<Folder[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState<URLResponse | null>(null);
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    loadFolders();
+  }, []);
+
+  const loadFolders = async () => {
+    try {
+      const data = await getAllFolders();
+      setFolders(data);
+    } catch (error) {
+      console.error('Failed to load folders:', error);
+    }
+  };
 
   const validateURL = (url: string): boolean => {
     try {
@@ -45,10 +61,12 @@ export default function URLShortener() {
       const response = await createShortURL({
         original_url: url,
         title: title || undefined,
+        folder_id: folderId || undefined,
       });
       setResult(response);
       setUrl('');
       setTitle('');
+      setFolderId('');
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to shorten URL. Please try again.');
     } finally {
@@ -90,6 +108,26 @@ export default function URLShortener() {
               label="Title (optional)"
               disabled={loading}
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
+              <FolderInput className="w-4 h-4" />
+              Assign to Folder (optional)
+            </label>
+            <select
+              value={folderId}
+              onChange={(e) => setFolderId(e.target.value)}
+              disabled={loading}
+              className="w-full h-12 px-4 glass rounded-lg text-white bg-dark-bg/50 border border-white/10 focus:glass-strong focus:outline-none focus:ring-2 focus:ring-neon-cyan/30 transition-all"
+            >
+              <option value="">No folder (All Links)</option>
+              {folders.map((folder) => (
+                <option key={folder.id} value={folder.id}>
+                  {folder.icon} {folder.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <Button

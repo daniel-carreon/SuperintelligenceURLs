@@ -15,10 +15,11 @@ class FolderService:
             self.repo = folder_repository
             self.use_db = True
         else:
-            # Fallback to in-memory storage
+            # Fallback to in-memory storage for testing
             self.folders: Dict[str, dict] = {}
             self.folder_links: Dict[str, List[str]] = {}
             self.use_db = False
+            self.repo = None
 
     def generate_folder_id(self) -> str:
         """Generate unique folder ID"""
@@ -43,42 +44,54 @@ class FolderService:
         Returns:
             Created folder dict
         """
-        # Validate parent exists
-        if parent_folder_id and parent_folder_id not in self.folders:
-            raise ValueError(f"Parent folder {parent_folder_id} not found")
+        if self.use_db:
+            # Use Supabase repository
+            return self.repo.create(name=name, color=color, icon=icon, parent_folder_id=parent_folder_id)
+        else:
+            # In-memory fallback
+            if parent_folder_id and parent_folder_id not in self.folders:
+                raise ValueError(f"Parent folder {parent_folder_id} not found")
 
-        folder_id = self.generate_folder_id()
-        folder = {
-            "id": folder_id,
-            "name": name,
-            "color": color,
-            "icon": icon,
-            "parent_folder_id": parent_folder_id,
-            "created_at": datetime.utcnow().isoformat(),
-            "updated_at": datetime.utcnow().isoformat(),
-        }
+            folder_id = self.generate_folder_id()
+            folder = {
+                "id": folder_id,
+                "name": name,
+                "color": color,
+                "icon": icon,
+                "parent_folder_id": parent_folder_id,
+                "created_at": datetime.utcnow().isoformat(),
+                "updated_at": datetime.utcnow().isoformat(),
+            }
 
-        self.folders[folder_id] = folder
-        self.folder_links[folder_id] = []
+            self.folders[folder_id] = folder
+            self.folder_links[folder_id] = []
 
-        return folder
+            return folder
 
     def get_folder(self, folder_id: str) -> Optional[dict]:
         """Get folder by ID"""
-        return self.folders.get(folder_id)
+        if self.use_db:
+            return self.repo.get(folder_id)
+        else:
+            return self.folders.get(folder_id)
 
     def get_all_folders(self) -> List[dict]:
         """Get all folders with analytics"""
-        result = []
-        for folder_id, folder in self.folders.items():
-            folder_data = folder.copy()
-            folder_data["link_count"] = len(self.folder_links.get(folder_id, []))
-            folder_data["subfolder_count"] = sum(
-                1 for f in self.folders.values()
-                if f.get("parent_folder_id") == folder_id
-            )
-            result.append(folder_data)
-        return result
+        if self.use_db:
+            # Use Supabase repository
+            return self.repo.get_all()
+        else:
+            # In-memory fallback
+            result = []
+            for folder_id, folder in self.folders.items():
+                folder_data = folder.copy()
+                folder_data["link_count"] = len(self.folder_links.get(folder_id, []))
+                folder_data["subfolder_count"] = sum(
+                    1 for f in self.folders.values()
+                    if f.get("parent_folder_id") == folder_id
+                )
+                result.append(folder_data)
+            return result
 
     def update_folder(
         self,
@@ -89,24 +102,29 @@ class FolderService:
         parent_folder_id: Optional[str] = None
     ) -> dict:
         """Update folder properties"""
-        if folder_id not in self.folders:
-            raise ValueError(f"Folder {folder_id} not found")
+        if self.use_db:
+            # Use Supabase repository
+            return self.repo.update(folder_id, name=name, color=color, icon=icon, parent_folder_id=parent_folder_id)
+        else:
+            # In-memory fallback
+            if folder_id not in self.folders:
+                raise ValueError(f"Folder {folder_id} not found")
 
-        folder = self.folders[folder_id]
+            folder = self.folders[folder_id]
 
-        if name is not None:
-            folder["name"] = name
-        if color is not None:
-            folder["color"] = color
-        if icon is not None:
-            folder["icon"] = icon
-        if parent_folder_id is not None:
-            # Validate parent exists and no circular reference
-            if parent_folder_id != folder_id and parent_folder_id in self.folders:
-                folder["parent_folder_id"] = parent_folder_id
+            if name is not None:
+                folder["name"] = name
+            if color is not None:
+                folder["color"] = color
+            if icon is not None:
+                folder["icon"] = icon
+            if parent_folder_id is not None:
+                # Validate parent exists and no circular reference
+                if parent_folder_id != folder_id and parent_folder_id in self.folders:
+                    folder["parent_folder_id"] = parent_folder_id
 
-        folder["updated_at"] = datetime.utcnow().isoformat()
-        return folder
+            folder["updated_at"] = datetime.utcnow().isoformat()
+            return folder
 
     def delete_folder(self, folder_id: str, delete_links: bool = False) -> bool:
         """
@@ -114,31 +132,36 @@ class FolderService:
 
         Args:
             folder_id: Folder to delete
-            delete_links: If True, also remove link associations
+            delete_links: If True, also remove link associations (CASCADE handles this in Supabase)
 
         Returns:
             True if deleted
         """
-        if folder_id not in self.folders:
-            return False
-
-        # Handle subfolders - move to parent or orphan
-        parent_id = self.folders[folder_id].get("parent_folder_id")
-        for folder in self.folders.values():
-            if folder.get("parent_folder_id") == folder_id:
-                folder["parent_folder_id"] = parent_id
-
-        # Handle links
-        if delete_links:
-            del self.folder_links[folder_id]
+        if self.use_db:
+            # Use Supabase repository - CASCADE automatically deletes folder_links
+            return self.repo.delete(folder_id)
         else:
-            # Move links to parent folder
-            if parent_id and parent_id in self.folder_links:
-                self.folder_links[parent_id].extend(self.folder_links.get(folder_id, []))
-            del self.folder_links[folder_id]
+            # In-memory fallback
+            if folder_id not in self.folders:
+                return False
 
-        del self.folders[folder_id]
-        return True
+            # Handle subfolders - move to parent or orphan
+            parent_id = self.folders[folder_id].get("parent_folder_id")
+            for folder in self.folders.values():
+                if folder.get("parent_folder_id") == folder_id:
+                    folder["parent_folder_id"] = parent_id
+
+            # Handle links
+            if delete_links:
+                del self.folder_links[folder_id]
+            else:
+                # Move links to parent folder
+                if parent_id and parent_id in self.folder_links:
+                    self.folder_links[parent_id].extend(self.folder_links.get(folder_id, []))
+                del self.folder_links[folder_id]
+
+            del self.folders[folder_id]
+            return True
 
     def assign_link_to_folder(self, url_id: str, folder_id: str) -> bool:
         """
@@ -151,31 +174,46 @@ class FolderService:
         Returns:
             True if assigned
         """
-        if folder_id not in self.folders:
-            raise ValueError(f"Folder {folder_id} not found")
+        if self.use_db:
+            # Use Supabase repository
+            return self.repo.assign_link(folder_id, url_id)
+        else:
+            # In-memory fallback
+            if folder_id not in self.folders:
+                raise ValueError(f"Folder {folder_id} not found")
 
-        if folder_id not in self.folder_links:
-            self.folder_links[folder_id] = []
+            if folder_id not in self.folder_links:
+                self.folder_links[folder_id] = []
 
-        if url_id not in self.folder_links[folder_id]:
-            self.folder_links[folder_id].append(url_id)
+            if url_id not in self.folder_links[folder_id]:
+                self.folder_links[folder_id].append(url_id)
 
-        return True
+            return True
 
     def remove_link_from_folder(self, url_id: str, folder_id: str) -> bool:
         """Remove URL from folder"""
-        if folder_id not in self.folder_links:
+        if self.use_db:
+            # Use Supabase repository
+            return self.repo.unassign_link(folder_id, url_id)
+        else:
+            # In-memory fallback
+            if folder_id not in self.folder_links:
+                return False
+
+            if url_id in self.folder_links[folder_id]:
+                self.folder_links[folder_id].remove(url_id)
+                return True
+
             return False
-
-        if url_id in self.folder_links[folder_id]:
-            self.folder_links[folder_id].remove(url_id)
-            return True
-
-        return False
 
     def get_folder_links(self, folder_id: str) -> List[str]:
         """Get all URL IDs in folder"""
-        return self.folder_links.get(folder_id, [])
+        if self.use_db:
+            # Use Supabase repository
+            return self.repo.get_links(folder_id)
+        else:
+            # In-memory fallback
+            return self.folder_links.get(folder_id, [])
 
     def get_folder_tree(self) -> List[dict]:
         """
@@ -184,17 +222,22 @@ class FolderService:
         Returns:
             List of root folders with nested subfolders
         """
-        def build_tree(parent_id: Optional[str] = None) -> List[dict]:
-            result = []
-            for folder_id, folder in self.folders.items():
-                if folder.get("parent_folder_id") == parent_id:
-                    folder_data = folder.copy()
-                    folder_data["link_count"] = len(self.folder_links.get(folder_id, []))
-                    folder_data["subfolders"] = build_tree(folder_id)
-                    result.append(folder_data)
-            return sorted(result, key=lambda x: x["name"])
+        if self.use_db:
+            # Use Supabase repository
+            return self.repo.get_tree()
+        else:
+            # In-memory fallback
+            def build_tree(parent_id: Optional[str] = None) -> List[dict]:
+                result = []
+                for folder_id, folder in self.folders.items():
+                    if folder.get("parent_folder_id") == parent_id:
+                        folder_data = folder.copy()
+                        folder_data["link_count"] = len(self.folder_links.get(folder_id, []))
+                        folder_data["subfolders"] = build_tree(folder_id)
+                        result.append(folder_data)
+                return sorted(result, key=lambda x: x["name"])
 
-        return build_tree(None)
+            return build_tree(None)
 
     def get_folder_analytics(self, folder_id: str, urls_data: dict, clicks_data: List[dict]) -> dict:
         """
@@ -208,6 +251,11 @@ class FolderService:
         Returns:
             Analytics summary
         """
+        # This method is only used for in-memory fallback mode
+        if self.use_db:
+            # For database mode, analytics should come from Supabase queries
+            raise NotImplementedError("Analytics for DB mode should use Supabase queries")
+
         if folder_id not in self.folders:
             raise ValueError(f"Folder {folder_id} not found")
 

@@ -157,11 +157,38 @@ async def create_short_url(url_data: URLCreate):
         domain=domain
     )
 
+    # Assign to folder if folder_id provided
+    if url_data.folder_id:
+        try:
+            folder_repo.assign_link(folder_id=url_data.folder_id, url_id=url_record['id'])
+            print(f"✅ Link {short_code} assigned to folder {url_data.folder_id}")
+        except Exception as e:
+            print(f"⚠️ Warning: Failed to assign link to folder: {e}")
+            # Continue anyway - link was created successfully
+
     # Performance tracking
     processing_time = (time.perf_counter() - start_time) * 1000
     print(f"✅ URL created in Supabase: {short_code} -> {url_data.original_url} ({processing_time:.2f}ms)")
 
     return url_record
+
+
+@app.get("/urls/all")
+async def get_all_urls():
+    """Get all shortened URLs"""
+    try:
+        urls = url_repo.get_all(limit=100)
+        print(f"✅ Retrieved {len(urls)} URLs from Supabase")
+        return {
+            "urls": urls,
+            "total": len(urls)
+        }
+    except Exception as e:
+        print(f"❌ Error getting URLs: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to retrieve URLs: {str(e)}"
+        )
 
 
 @app.get("/{short_code}")
@@ -262,7 +289,8 @@ async def get_analytics(short_code: str):
         "platform_breakdown": analytics['platform_breakdown'],  # NEW - detailed platforms
         "video_sources": analytics['video_sources'],  # NEW - video attribution
         "time_patterns": analytics['time_patterns'],  # NEW - time analysis
-        "referrer_breakdown": analytics['referrer_breakdown']
+        "referrer_breakdown": analytics['referrer_breakdown'],
+        "recent_clicks": analytics.get('recent_clicks', [])  # ✅ Recent clicks table data
     }
 
 

@@ -44,7 +44,8 @@ class ClickRepository:
             'platform_breakdown': self._count_field(clicks, 'platform'),
             'video_sources': self._count_videos(clicks),
             'time_patterns': self._analyze_time(clicks),
-            'referrer_breakdown': self._count_field(clicks, 'referrer_type')
+            'referrer_breakdown': self._count_field(clicks, 'referrer_type'),
+            'recent_clicks': clicks[:50]  # ✅ Return last 50 clicks for table
         }
 
     def _count_field(self, clicks, field):
@@ -102,5 +103,6 @@ class ClickRepository:
             'platform_breakdown': {},
             'video_sources': {},
             'time_patterns': {},
-            'referrer_breakdown': {}
+            'referrer_breakdown': {},
+            'recent_clicks': []  # ✅ Empty array cuando no hay clicks
         }
