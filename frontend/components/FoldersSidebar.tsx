@@ -6,7 +6,12 @@ import { GlassCard } from './ui/GlassCard';
 import Button from './ui/Button';
 import { FolderPlus, ChevronDown, ChevronRight, Pencil } from 'lucide-react';
 
-export default function FoldersSidebar() {
+interface FoldersSidebarProps {
+  selectedFolder?: string | null;
+  onSelectFolder?: (folderId: string | null) => void;
+}
+
+export default function FoldersSidebar({ selectedFolder, onSelectFolder }: FoldersSidebarProps) {
   const [folders, setFolders] = useState<Folder[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
@@ -45,7 +50,10 @@ export default function FoldersSidebar() {
     return (
       <div key={folder.id} style={{ marginLeft: `${level * 16}px` }}>
         <div
-          className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors group"
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors group cursor-pointer ${
+            selectedFolder === folder.id ? 'bg-neon-cyan/20 border border-neon-cyan/50' : 'hover:bg-white/5'
+          }`}
+          onClick={() => onSelectFolder?.(folder.id)}
         >
           {hasSubfolders && (
             <button
@@ -101,7 +109,7 @@ export default function FoldersSidebar() {
 
   return (
     <>
-      <div className="w-72 h-screen fixed left-0 top-0 p-4 overflow-y-auto">
+      <div className="w-80 h-screen fixed left-0 top-0 p-4 overflow-y-auto">
         <GlassCard intensity="strong" className="h-full">
           <div className="p-4 space-y-4">
             {/* Header */}
@@ -113,6 +121,16 @@ export default function FoldersSidebar() {
                 <p className="text-xs text-gray-400">Organize your links</p>
               </div>
             </div>
+
+            {/* All Links Button */}
+            <Button
+              variant={selectedFolder === null ? 'primary' : 'secondary'}
+              size="sm"
+              className="w-full mb-3"
+              onClick={() => onSelectFolder?.(null)}
+            >
+              All Links
+            </Button>
 
             {/* New Folder Button */}
             <Button

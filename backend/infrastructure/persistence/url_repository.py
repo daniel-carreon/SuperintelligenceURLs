@@ -38,11 +38,19 @@ class URLRepository:
 
     def update_click_count(self, url_id: str):
         """Incrementar click count"""
+        # Get current count
+        url = self.table.select('click_count').eq('id', url_id).execute()
+        if not url.data:
+            return None
+
+        current_count = url.data[0].get('click_count', 0)
+
+        # Update with incremented count
         response = self.table.update({
-            'click_count': self.client.rpc('increment_click_count', {'p_url_id': url_id}).execute(),
+            'click_count': current_count + 1,
             'last_clicked_at': datetime.utcnow().isoformat()
         }).eq('id', url_id).execute()
-        return response.data
+        return response.data[0] if response.data else None
 
     def delete(self, short_code: str) -> bool:
         """Soft delete - marcar como inactiva"""

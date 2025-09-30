@@ -3,7 +3,7 @@
 import { GlassCard } from '@/components/ui/GlassCard';
 import Button from '@/components/ui/Button';
 import FoldersSidebar from '@/components/FoldersSidebar';
-import { Link2, Copy, BarChart3, ExternalLink, Check, Sparkles, TrendingUp, FolderInput } from 'lucide-react';
+import { Link2, Copy, BarChart3, ExternalLink, Check, Sparkles, TrendingUp, FolderInput, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { getAllFolders, assignLinkToFolder, type Folder } from '@/lib/folders-api';
@@ -34,6 +34,8 @@ export default function LinksPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [folders, setFolders] = useState<Folder[]>([]);
   const [showFolderDropdown, setShowFolderDropdown] = useState<string | null>(null);
+  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
+  const [links, setLinks] = useState(mockLinks);
 
   useEffect(() => {
     loadFolders();
@@ -66,6 +68,28 @@ export default function LinksPage() {
     }
   };
 
+  const handleDeleteLink = async (shortCode: string) => {
+    if (!confirm('¿Eliminar este link permanentemente?')) return;
+
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${API_URL}/${shortCode}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete link');
+      }
+
+      // Remove from UI
+      setLinks(links.filter(link => link.short_code !== shortCode));
+      alert('Link deleted successfully!');
+    } catch (error) {
+      console.error('Delete failed:', error);
+      alert('Failed to delete link');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-dark-bg relative overflow-hidden flex">
       {/* Animated mesh background */}
@@ -77,9 +101,12 @@ export default function LinksPage() {
       <div className="fixed top-1/2 left-1/2 w-80 h-80 bg-neon-pink rounded-full opacity-15 blur-3xl animate-float" style={{ animationDelay: '4s' }} />
 
       {/* Folders Sidebar */}
-      <FoldersSidebar />
+      <FoldersSidebar
+        selectedFolder={selectedFolder}
+        onSelectFolder={setSelectedFolder}
+      />
 
-      <div className="relative z-10 flex-1 ml-72">
+      <div className="relative z-10 flex-1 ml-80">
         {/* Header */}
         <nav className="glass-strong border-b border-white/10 sticky top-0 z-50 backdrop-blur-xl">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -113,7 +140,13 @@ export default function LinksPage() {
           </div>
 
           <div className="space-y-6">
-            {mockLinks.map((link, idx) => (
+            {(() => {
+              // Filter links based on selected folder
+              const filteredLinks = selectedFolder
+                ? links.filter(link => link.folder_id === selectedFolder)
+                : links;
+
+              return filteredLinks.map((link, idx) => (
               <GlassCard key={link.id} glow="cyan" className="relative overflow-hidden group animate-fade-in" style={{ animationDelay: `${idx * 100}ms` }}>
                 <div className="absolute inset-0 gradient-holographic opacity-0 group-hover:opacity-5 transition-opacity duration-300" />
                 <div className="relative z-10 flex items-start justify-between">
@@ -171,18 +204,13 @@ export default function LinksPage() {
                       variant="secondary"
                       size="md"
                       onClick={() => handleCopy(link.short_code, link.id)}
-                      className="min-w-[120px]"
+                      className="min-w-[44px]"
+                      title={copiedId === link.id ? "Copied!" : "Copy"}
                     >
                       {copiedId === link.id ? (
-                        <>
-                          <Check className="w-4 h-4 mr-2" />
-                          Copied!
-                        </>
+                        <Check className="w-4 h-4" />
                       ) : (
-                        <>
-                          <Copy className="w-4 h-4 mr-2" />
-                          Copy
-                        </>
+                        <Copy className="w-4 h-4" />
                       )}
                     </Button>
 
@@ -192,10 +220,10 @@ export default function LinksPage() {
                         variant="secondary"
                         size="md"
                         onClick={() => setShowFolderDropdown(showFolderDropdown === link.id ? null : link.id)}
-                        className="w-full"
+                        className="min-w-[44px]"
+                        title="Assign to Folder"
                       >
-                        <FolderInput className="w-4 h-4 mr-2" />
-                        Folder
+                        <FolderInput className="w-4 h-4" />
                       </Button>
 
                       {/* Folder Dropdown */}
@@ -230,18 +258,28 @@ export default function LinksPage() {
                     </div>
 
                     <Link href={`/dashboard/analytics?code=${link.short_code}`}>
-                      <Button variant="primary" size="md" className="w-full">
-                        <BarChart3 className="w-4 h-4 mr-2" />
-                        Analytics
+                      <Button variant="primary" size="md" className="min-w-[44px]" title="Analytics">
+                        <BarChart3 className="w-4 h-4" />
                       </Button>
                     </Link>
+
+                    <Button
+                      variant="danger"
+                      size="md"
+                      onClick={() => handleDeleteLink(link.short_code)}
+                      className="min-w-[44px]"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
               </GlassCard>
-            ))}
+              ));
+            })()}
           </div>
 
-          {mockLinks.length === 0 && (
+          {links.length === 0 && (
             <GlassCard intensity="strong" className="text-center py-20 relative overflow-hidden">
               <div className="absolute inset-0 gradient-holographic opacity-5" />
               <div className="relative z-10">

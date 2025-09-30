@@ -124,43 +124,44 @@ async def create_short_url(url_data: URLCreate):
     # Generate unique short code
     short_code = generate_short_code(url=url_data.original_url)
 
-    # Ensure uniqueness
+    # Ensure uniqueness in Supabase
     max_attempts = 10
     attempts = 0
-    while short_code in urls_db and attempts < max_attempts:
+    existing = url_repo.get_by_short_code(short_code)
+    while existing and attempts < max_attempts:
         short_code = generate_short_code()
+        existing = url_repo.get_by_short_code(short_code)
         attempts += 1
 
-    if short_code in urls_db:
+    if existing:
         raise HTTPException(
             status_code=500,
             detail="Unable to generate unique short code"
         )
 
-    # Create URL record
-    url_record = URLRecord(
+    # Extract domain
+    try:
+        if not url_data.original_url.startswith(('http://', 'https://')):
+            domain = None
+        else:
+            url_without_protocol = url_data.original_url.split('://', 1)[1]
+            domain = url_without_protocol.split('/')[0].split(':')[0].lower()
+    except Exception:
+        domain = None
+
+    # Create in Supabase
+    url_record = url_repo.create(
         short_code=short_code,
         original_url=url_data.original_url,
-        title=url_data.title
+        title=url_data.title,
+        domain=domain
     )
-
-    # Store in temporary database
-    urls_db[short_code] = url_record
 
     # Performance tracking
     processing_time = (time.perf_counter() - start_time) * 1000
-    print(f"URL created: {short_code} -> {url_data.original_url} ({processing_time:.2f}ms)")
+    print(f"✅ URL created in Supabase: {short_code} -> {url_data.original_url} ({processing_time:.2f}ms)")
 
-    return {
-        "id": url_record.id,
-        "short_code": url_record.short_code,
-        "original_url": url_record.original_url,
-        "title": url_record.title,
-        "is_active": url_record.is_active,
-        "created_at": url_record.created_at.isoformat(),
-        "click_count": url_record.click_count,
-        "domain": url_record.domain
-    }
+    return url_record
 
 
 @app.get("/{short_code}")
@@ -175,47 +176,61 @@ async def redirect_url(short_code: str, request: Request):
             detail="Invalid short code format"
         )
 
-    # Lookup URL
-    if short_code not in urls_db:
+    # Lookup URL in Supabase
+    url_record = url_repo.get_by_short_code(short_code)
+    if not url_record:
         raise HTTPException(
             status_code=404,
             detail="Short URL not found"
         )
 
-    url_record = urls_db[short_code]
-
-    # Check if URL can be redirected
-    if not url_record.can_redirect():
+    # Check if URL is active
+    if not url_record.get('is_active', True):
         raise HTTPException(
             status_code=410,
             detail="Short URL is inactive"
         )
 
-    # Track click analytics with advanced features (async)
+    # Track click with advanced analytics
     click_data = await click_tracker_service.track_click(
-        url_id=url_record.id,
+        url_id=url_record['id'],
         short_code=short_code,
         request=request
     )
 
-    # Update URL statistics
-    url_record.click_count += 1
-    url_record.last_clicked_at = datetime.utcnow()
-
-    # Also store in old format for backward compatibility
-    clicks_db.append({
+    # Save click to Supabase with all advanced fields
+    click_repo.create({
+        'url_id': url_record['id'],
         'short_code': short_code,
         'ip_address': click_data.ip_address,
-        'device_type': click_data.device_type
+        'user_agent': click_data.user_agent,
+        'referer': click_data.referer,
+        'country_code': click_data.country_code,
+        'country_name': click_data.country_name,
+        'city': click_data.city,
+        'device_type': click_data.device_type,
+        'browser_name': click_data.browser_name,
+        'os_name': click_data.os_name,
+        'referrer_domain': click_data.referrer_domain,
+        'referrer_type': click_data.referrer_type,
+        # Advanced analytics fields
+        'video_id': click_data.video_id,
+        'video_platform': click_data.video_platform,
+        'platform': click_data.platform,
+        'is_returning_visitor': click_data.is_returning_visitor,
+        'session_id': click_data.session_id
     })
+
+    # Update click count in Supabase
+    url_repo.update_click_count(url_record['id'])
 
     # Performance logging
     redirect_time = (time.perf_counter() - start_time) * 1000
-    print(f"Redirect: {short_code} -> {url_record.original_url} ({redirect_time:.2f}ms)")
+    print(f"✅ Redirect + Analytics: {short_code} ({redirect_time:.2f}ms)")
 
-    # Return redirect response (HTTP 301 for permanent redirect)
+    # Return redirect response
     return RedirectResponse(
-        url=url_record.original_url,
+        url=url_record['original_url'],
         status_code=301
     )
 
@@ -223,21 +238,21 @@ async def redirect_url(short_code: str, request: Request):
 @app.get("/analytics/{short_code}")
 async def get_analytics(short_code: str):
     """Get analytics for a specific short URL with advanced features"""
-    if short_code not in urls_db:
+    # Get URL from Supabase
+    url_record = url_repo.get_by_short_code(short_code)
+    if not url_record:
         raise HTTPException(
             status_code=404,
             detail="Short URL not found"
         )
 
-    url_record = urls_db[short_code]
-
-    # Get advanced analytics summary from click tracker service
-    analytics = click_tracker_service.get_analytics_summary(url_record.id)
+    # Get analytics from Supabase
+    analytics = click_repo.get_analytics_summary(short_code)
 
     return {
         "short_code": short_code,
-        "original_url": url_record.original_url,
-        "created_at": url_record.created_at.isoformat(),
+        "original_url": url_record['original_url'],
+        "created_at": url_record['created_at'],
         "total_clicks": analytics['total_clicks'],
         "unique_visitors": analytics['unique_visitors'],
         "returning_visitors": analytics['returning_visitors'],  # NEW
@@ -249,6 +264,19 @@ async def get_analytics(short_code: str):
         "time_patterns": analytics['time_patterns'],  # NEW - time analysis
         "referrer_breakdown": analytics['referrer_breakdown']
     }
+
+
+@app.delete("/{short_code}")
+async def delete_url(short_code: str):
+    """Soft delete URL - sets is_active to False"""
+    success = url_repo.delete(short_code)
+    if not success:
+        raise HTTPException(
+            status_code=404,
+            detail="Short URL not found"
+        )
+    print(f"✅ URL soft-deleted: {short_code}")
+    return {"message": "URL deleted successfully", "short_code": short_code}
 
 
 async def track_click(short_code: str, url_id: str, request: Request, start_time: float):
