@@ -2,9 +2,11 @@
 
 import { GlassCard } from '@/components/ui/GlassCard';
 import Button from '@/components/ui/Button';
-import { Link2, Copy, BarChart3, ExternalLink, Check, Sparkles, TrendingUp } from 'lucide-react';
+import FoldersSidebar from '@/components/FoldersSidebar';
+import { Link2, Copy, BarChart3, ExternalLink, Check, Sparkles, TrendingUp, FolderInput } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getAllFolders, assignLinkToFolder, type Folder } from '@/lib/folders-api';
 
 // Mock data - will be replaced with real data from backend
 const mockLinks = [
@@ -30,6 +32,21 @@ const mockLinks = [
 
 export default function LinksPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [showFolderDropdown, setShowFolderDropdown] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadFolders();
+  }, []);
+
+  const loadFolders = async () => {
+    try {
+      const data = await getAllFolders();
+      setFolders(data);
+    } catch (error) {
+      console.error('Failed to load folders:', error);
+    }
+  };
 
   const handleCopy = async (shortCode: string, id: string) => {
     const shortURL = `${window.location.origin}/${shortCode}`;
@@ -38,8 +55,19 @@ export default function LinksPage() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
+  const handleAssignToFolder = async (urlId: string, folderId: string) => {
+    try {
+      await assignLinkToFolder({ url_id: urlId, folder_id: folderId });
+      setShowFolderDropdown(null);
+      alert('Link assigned to folder!');
+    } catch (error) {
+      console.error('Failed to assign link:', error);
+      alert('Failed to assign link to folder');
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-dark-bg relative overflow-hidden">
+    <div className="min-h-screen bg-dark-bg relative overflow-hidden flex">
       {/* Animated mesh background */}
       <div className="fixed inset-0 bg-mesh opacity-60 animate-pulse" style={{ animationDuration: '8s' }} />
 
@@ -48,7 +76,10 @@ export default function LinksPage() {
       <div className="fixed bottom-20 right-10 w-96 h-96 bg-neon-purple rounded-full opacity-20 blur-3xl animate-float" style={{ animationDelay: '2s' }} />
       <div className="fixed top-1/2 left-1/2 w-80 h-80 bg-neon-pink rounded-full opacity-15 blur-3xl animate-float" style={{ animationDelay: '4s' }} />
 
-      <div className="relative z-10">
+      {/* Folders Sidebar */}
+      <FoldersSidebar />
+
+      <div className="relative z-10 flex-1 ml-72">
         {/* Header */}
         <nav className="glass-strong border-b border-white/10 sticky top-0 z-50 backdrop-blur-xl">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -154,6 +185,49 @@ export default function LinksPage() {
                         </>
                       )}
                     </Button>
+
+                    {/* Assign to Folder Button */}
+                    <div className="relative">
+                      <Button
+                        variant="secondary"
+                        size="md"
+                        onClick={() => setShowFolderDropdown(showFolderDropdown === link.id ? null : link.id)}
+                        className="w-full"
+                      >
+                        <FolderInput className="w-4 h-4 mr-2" />
+                        Folder
+                      </Button>
+
+                      {/* Folder Dropdown */}
+                      {showFolderDropdown === link.id && (
+                        <div className="absolute right-0 mt-2 w-56 glass-strong rounded-xl border border-white/10 shadow-2xl z-50 max-h-64 overflow-y-auto">
+                          <div className="p-2">
+                            {folders.length === 0 ? (
+                              <div className="text-center py-4">
+                                <p className="text-xs text-gray-400">No folders yet</p>
+                              </div>
+                            ) : (
+                              folders.map((folder) => (
+                                <button
+                                  key={folder.id}
+                                  onClick={() => handleAssignToFolder(link.short_code, folder.id)}
+                                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 text-left transition-colors"
+                                >
+                                  <span className="text-lg">{folder.icon}</span>
+                                  <span
+                                    className="w-2 h-2 rounded-full flex-shrink-0"
+                                    style={{ backgroundColor: folder.color }}
+                                  />
+                                  <span className="text-sm text-white truncate flex-1">
+                                    {folder.name}
+                                  </span>
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
 
                     <Link href={`/dashboard/analytics?code=${link.short_code}`}>
                       <Button variant="primary" size="md" className="w-full">
