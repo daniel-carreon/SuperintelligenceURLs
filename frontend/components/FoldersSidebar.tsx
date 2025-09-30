@@ -100,51 +100,53 @@ export default function FoldersSidebar() {
   };
 
   return (
-    <div className="w-72 h-screen fixed left-0 top-0 p-4 overflow-y-auto">
-      <GlassCard intensity="strong" className="h-full">
-        <div className="p-4 space-y-4">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-xl font-bold text-gradient-holographic">
-                Folders
-              </h2>
-              <p className="text-xs text-gray-400">Organize your links</p>
+    <>
+      <div className="w-72 h-screen fixed left-0 top-0 p-4 overflow-y-auto">
+        <GlassCard intensity="strong" className="h-full">
+          <div className="p-4 space-y-4">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-gradient-holographic">
+                  Folders
+                </h2>
+                <p className="text-xs text-gray-400">Organize your links</p>
+              </div>
+            </div>
+
+            {/* New Folder Button */}
+            <Button
+              variant="primary"
+              size="sm"
+              className="w-full"
+              onClick={() => setShowCreateModal(true)}
+            >
+              <FolderPlus className="w-4 h-4 mr-2" />
+              New Folder
+            </Button>
+
+            {/* Folders List */}
+            <div className="space-y-1 mt-4">
+              {loading ? (
+                <div className="text-center py-8">
+                  <div className="w-8 h-8 border-4 border-neon-cyan border-t-transparent rounded-full animate-spin mx-auto" />
+                  <p className="text-sm text-gray-400 mt-2">Loading folders...</p>
+                </div>
+              ) : folders.length === 0 ? (
+                <div className="text-center py-8">
+                  <span className="text-4xl">📁</span>
+                  <p className="text-sm text-gray-400 mt-2">No folders yet</p>
+                  <p className="text-xs text-gray-500">Create your first folder</p>
+                </div>
+              ) : (
+                folders.map((folder) => renderFolder(folder))
+              )}
             </div>
           </div>
+        </GlassCard>
+      </div>
 
-          {/* New Folder Button */}
-          <Button
-            variant="primary"
-            size="sm"
-            className="w-full"
-            onClick={() => setShowCreateModal(true)}
-          >
-            <FolderPlus className="w-4 h-4 mr-2" />
-            New Folder
-          </Button>
-
-          {/* Folders List */}
-          <div className="space-y-1 mt-4">
-            {loading ? (
-              <div className="text-center py-8">
-                <div className="w-8 h-8 border-4 border-neon-cyan border-t-transparent rounded-full animate-spin mx-auto" />
-                <p className="text-sm text-gray-400 mt-2">Loading folders...</p>
-              </div>
-            ) : folders.length === 0 ? (
-              <div className="text-center py-8">
-                <span className="text-4xl">📁</span>
-                <p className="text-sm text-gray-400 mt-2">No folders yet</p>
-                <p className="text-xs text-gray-500">Create your first folder</p>
-              </div>
-            ) : (
-              folders.map((folder) => renderFolder(folder))
-            )}
-          </div>
-        </div>
-      </GlassCard>
-
-      {/* Create Folder Modal */}
+      {/* Create Folder Modal - OUTSIDE sidebar */}
       {showCreateModal && (
         <CreateFolderModal
           onClose={() => setShowCreateModal(false)}
@@ -155,7 +157,7 @@ export default function FoldersSidebar() {
         />
       )}
 
-      {/* Edit Folder Modal */}
+      {/* Edit Folder Modal - OUTSIDE sidebar */}
       {editingFolder && (
         <EditFolderModal
           folder={editingFolder}
@@ -166,7 +168,7 @@ export default function FoldersSidebar() {
           }}
         />
       )}
-    </div>
+    </>
   );
 }
 

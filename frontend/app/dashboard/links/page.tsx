@@ -152,7 +152,7 @@ export default function LinksPage() {
 
                       <div className="text-gray-400">
                         <div className="text-xs text-gray-500">Created</div>
-                        <div className="font-medium">{new Date(link.created_at).toLocaleDateString()}</div>
+                        <div className="font-medium">{new Date(link.created_at).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })}</div>
                       </div>
 
                       {link.domain && (
