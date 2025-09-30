@@ -26,14 +26,22 @@ from application.services.folder_service import FolderService
 # Import click tracker service
 from application.services.click_tracker_service import click_tracker_service
 
-# Temporary in-memory storage for MVP
+# Import Supabase repositories
+from infrastructure.persistence.url_repository import URLRepository
+from infrastructure.persistence.click_repository import ClickRepository
+from infrastructure.persistence.folder_repository import FolderRepository
+
+# Initialize repositories
+url_repo = URLRepository()
+click_repo = ClickRepository()
+folder_repo = FolderRepository()
+
+# Initialize folder service with repository
+folder_service_instance = FolderService(folder_repo)
+
+# Legacy exports (mantener compatibilidad temporal)
 urls_db = {}
 clicks_db = []
-
-# Initialize folder service
-folder_service_instance = FolderService()
-
-# Export for folder router
 urls = urls_db
 clicks = clicks_db
 
