@@ -315,7 +315,7 @@ if __name__ == "__main__":
     import asyncio
 
     async def test_geolocation():
-        print("Testing Geolocation Service")
+        print("< Testing Geolocation Service")
         print("=" * 40)
 
         test_ips = ['8.8.8.8', '1.1.1.1', 'invalid-ip']
@@ -325,19 +325,10 @@ if __name__ == "__main__":
             result = await get_ip_location(ip)
             elapsed = (time.perf_counter() - start_time) * 1000
 
-            print(f"\nIP: {ip}")
+            print(f"\n= IP: {ip}")
             print(f"   Country: {result.get('country_name', 'Unknown')}")
             print(f"   City: {result.get('city', 'Unknown')}")
             print(f"   Provider: {result.get('provider', 'Unknown')}")
             print(f"   Time: {elapsed:.2f}ms")
 
         # Performance benchmark
-        print(f"\nPerformance Benchmark:")
-        benchmark_results = await benchmark_geolocation(['8.8.8.8'], 10)
-        for key, value in benchmark_results.items():
-            if isinstance(value, float):
-                print(f"   {key}: {value:.2f}")
-            else:
-                print(f"   {key}: {value}")
-
-    asyncio.run(test_geolocation())

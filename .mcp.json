@@ -17,40 +17,6 @@
           "SUPABASE_ACCESS_TOKEN": "sbp_3600a70e0aab788b92e6733f83778d65512f5f83"
         }
       },
-      "brave-search": {
-        "command": "npx",
-        "args": [
-          "-y",
-          "@modelcontextprotocol/server-brave-search"
-        ],
-        "env": {
-          "BRAVE_API_KEY": "YOUR_BRAVE_API_KEY"
-        }
-      },
-      "firecrawl-mcp": {
-        "command": "npx",
-        "args": [
-          "-y",
-          "firecrawl-mcp"
-        ],
-        "env": {
-          "FIRECRAWL_API_KEY": "YOUR_FIRECRAWL_API_KEY"
-        }
-      },
-      "n8n-mcp": {
-        "command": "docker",
-        "args": [
-          "run",
-          "-i",
-          "--rm",
-          "-e", "MCP_MODE=stdio",
-          "-e", "LOG_LEVEL=error",
-          "-e", "DISABLE_CONSOLE_OUTPUT=true",
-          "-e", "N8N_API_URL=YOUR_N8N_API_URL",
-          "-e", "N8N_API_KEY=YOUR_N8N_API_KEY",
-          "ghcr.io/czlonkowski/n8n-mcp:latest"
-        ]
-      },
       "sequential-thinking": {
         "command": "npx",
         "args": [

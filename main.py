@@ -13,26 +13,12 @@ from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 # Import domain models
-from domain.models.url import URLCreate
-from domain.services.url_generator import generate_short_code, validate_short_code
-
-# Import advanced analytics services
-from infrastructure.external_apis.geolocation_client import get_ip_location
-from infrastructure.external_apis.user_agent_parser import parse_user_agent
-
-# Import folder service
-from application.services.folder_service import FolderService
+from backend.domain.models.url import URLCreate
+from backend.domain.services.url_generator import generate_short_code, validate_short_code
 
 # Temporary in-memory storage for MVP
 urls_db = {}
 clicks_db = []
-
-# Initialize folder service
-folder_service_instance = FolderService()
-
-# Export for folder router
-urls = urls_db
-clicks = clicks_db
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -50,11 +36,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Include folders router
-from api import folders_router
-folders_router.folder_service = folder_service_instance
-app.include_router(folders_router.router)
 
 
 class URLRecord:
@@ -180,8 +161,8 @@ async def redirect_url(short_code: str, request: Request):
             detail="Short URL is inactive"
         )
 
-    # Track click analytics (async)
-    await track_click(short_code, url_record.id, request, start_time)
+    # Track click analytics
+    track_click(short_code, url_record.id, request, start_time)
 
     # Update URL statistics
     url_record.click_count += 1
@@ -233,37 +214,17 @@ async def get_analytics(short_code: str):
     }
 
 
-async def track_click(short_code: str, url_id: str, request: Request, start_time: float):
-    """Track click event with advanced analytics"""
-    analytics_start = time.perf_counter()
-
+def track_click(short_code: str, url_id: str, request: Request, start_time: float):
+    """Track click event for analytics"""
     # Extract request metadata
     ip_address = get_client_ip(request)
     user_agent = request.headers.get('user-agent', '')
     referer = request.headers.get('referer')
 
-    # Advanced user agent parsing
-    device_info = parse_user_agent(user_agent)
+    # Basic device detection
+    device_type = detect_device_type(user_agent)
 
-    # Advanced geolocation (async with fallback)
-    location_data = {}
-    try:
-        if ip_address and ip_address not in ['127.0.0.1', 'localhost', 'testclient']:
-            location_data = await get_ip_location(ip_address)
-    except Exception as e:
-        print(f"Geolocation failed for {ip_address}: {e}")
-        location_data = {
-            'country_name': 'Unknown',
-            'city': None,
-            'provider': 'fallback'
-        }
-
-    # Extract referrer source
-    referrer_source = extract_referrer_source(referer)
-
-    analytics_time = (time.perf_counter() - analytics_start) * 1000
-
-    # Create comprehensive click record
+    # Create click record
     click_data = {
         'id': f"click_{len(clicks_db)}",
         'url_id': url_id,
@@ -271,43 +232,14 @@ async def track_click(short_code: str, url_id: str, request: Request, start_time
         'ip_address': ip_address,
         'user_agent': user_agent,
         'referer': referer,
-        'referrer_source': referrer_source,
-
-        # Device Analytics
-        'device_type': device_info.get('device_type', 'unknown'),
-        'device_brand': device_info.get('device_brand'),
-        'device_model': device_info.get('device_model'),
-        'browser_name': device_info.get('browser_name', 'Unknown'),
-        'browser_version': device_info.get('browser_version'),
-        'os_name': device_info.get('os_name', 'Unknown'),
-        'os_version': device_info.get('os_version'),
-        'is_mobile': device_info.get('is_mobile', False),
-        'is_tablet': device_info.get('is_tablet', False),
-        'is_desktop': device_info.get('is_desktop', False),
-        'is_bot': device_info.get('is_bot', False),
-
-        # Geographic Analytics
-        'country_name': location_data.get('country_name', 'Unknown'),
-        'country_code': location_data.get('country_code'),
-        'region': location_data.get('region'),
-        'city': location_data.get('city'),
-        'timezone': location_data.get('timezone'),
-        'isp': location_data.get('isp'),
-        'latitude': location_data.get('latitude'),
-        'longitude': location_data.get('longitude'),
-        'geo_provider': location_data.get('provider', 'none'),
-
-        # Performance Metrics
+        'device_type': device_type,
+        'country_name': 'Unknown',
         'clicked_at': datetime.utcnow().isoformat(),
-        'response_time_ms': int((time.perf_counter() - start_time) * 1000),
-        'analytics_time_ms': round(analytics_time, 2)
+        'response_time_ms': int((time.perf_counter() - start_time) * 1000)
     }
 
     # Store click event
     clicks_db.append(click_data)
-
-    # Performance logging
-    print(f"📊 Analytics: {analytics_time:.2f}ms | Device: {device_info.get('device_type')} | Location: {location_data.get('country_name', 'Unknown')}")
 
     return click_data
 
@@ -348,60 +280,6 @@ def detect_device_type(user_agent: str) -> str:
         return 'bot'
 
     return 'desktop'
-
-
-def extract_referrer_source(referer: Optional[str]) -> str:
-    """Extract traffic source from referrer URL"""
-    if not referer:
-        return 'direct'
-
-    referer_lower = referer.lower()
-
-    # Social media platforms
-    social_sources = {
-        'facebook.com': 'Facebook',
-        'twitter.com': 'Twitter',
-        'x.com': 'Twitter',
-        'linkedin.com': 'LinkedIn',
-        'instagram.com': 'Instagram',
-        'youtube.com': 'YouTube',
-        'tiktok.com': 'TikTok',
-        'reddit.com': 'Reddit',
-        'pinterest.com': 'Pinterest',
-        'whatsapp.com': 'WhatsApp',
-        'telegram.org': 'Telegram'
-    }
-
-    # Search engines
-    search_sources = {
-        'google.com': 'Google',
-        'bing.com': 'Bing',
-        'yahoo.com': 'Yahoo',
-        'duckduckgo.com': 'DuckDuckGo',
-        'baidu.com': 'Baidu'
-    }
-
-    # Email platforms
-    email_sources = {
-        'gmail.com': 'Gmail',
-        'outlook.com': 'Outlook',
-        'mail.yahoo.com': 'Yahoo Mail'
-    }
-
-    # Check all source categories
-    for domain, source in {**social_sources, **search_sources, **email_sources}.items():
-        if domain in referer_lower:
-            return source
-
-    # Extract domain for unknown sources
-    try:
-        if '://' in referer:
-            domain = referer.split('://')[1].split('/')[0]
-            return domain.replace('www.', '')
-    except Exception:
-        pass
-
-    return 'other'
 
 
 @app.get("/health")
