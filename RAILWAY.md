@@ -4,6 +4,8 @@
 
 This project uses a **monorepo structure** with separate services for frontend and backend.
 
+**Important:** Railway uses **Railpack** (successor to Nixpacks) as the default builder for new services. This project is configured to use Railpack with custom build commands for monorepo support.
+
 ---
 
 ## 📦 Services Setup
