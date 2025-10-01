@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { getAnalytics, AnalyticsResponse } from '@/lib/api';
 import { GlassCard } from '@/components/ui/GlassCard';
@@ -13,7 +13,7 @@ import Link from 'next/link';
 // Holographic color palette for charts
 const COLORS = ['#00fff5', '#0066ff', '#8b5cf6', '#ff006e', '#ff6b35', '#10b981'];
 
-export default function AnalyticsPage() {
+function AnalyticsContent() {
   const searchParams = useSearchParams();
   const [shortCode, setShortCode] = useState(searchParams?.get('code') || '');
   const [analytics, setAnalytics] = useState<AnalyticsResponse | null>(null);
@@ -211,7 +211,7 @@ export default function AnalyticsPage() {
                           cx="50%"
                           cy="50%"
                           labelLine={false}
-                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          label={({ name, percent }: any) => `${name} ${(percent * 100).toFixed(0)}%`}
                           outerRadius={85}
                           fill="#8884d8"
                           dataKey="value"
@@ -421,5 +421,13 @@ export default function AnalyticsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AnalyticsPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="text-white">Loading analytics...</div></div>}>
+      <AnalyticsContent />
+    </Suspense>
   );
 }
