@@ -26,7 +26,7 @@ export default function Home() {
                   <Sparkles className="w-6 h-6 text-white" />
                 </div>
                 <span className="text-2xl font-bold text-gradient-holographic">
-                  SuperintelligenceURLs
+                  Super Intelligence URLs
                 </span>
                 <span className="px-2 py-1 text-xs font-semibold bg-neon-cyan/20 text-neon-cyan rounded-full border border-neon-cyan/30 animate-pulse">
                   2030

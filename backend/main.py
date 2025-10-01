@@ -63,9 +63,11 @@ app.add_middleware(
 )
 
 # Include folders router
-from api import folders_router
-folders_router.folder_service = folder_service_instance
-app.include_router(folders_router.router)
+from api.folders_router import router as folders_router_impl, folder_service as _folder_service_var
+# Set the folder service instance
+import api.folders_router as folders_router_module
+folders_router_module.folder_service = folder_service_instance
+app.include_router(folders_router_impl)
 
 
 class URLRecord:
