@@ -1,8 +1,0 @@
-# Railway Configuration for SuperintelligenceURLs
-
-[build]
-builder = "nixpacks"
-
-[deploy]
-startCommand = "echo 'This is a monorepo. Deploy frontend and backend separately.'"
-restartPolicyType = "never"
