@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-LinkProxy FastAPI Application
+SuperintelligenceURLs FastAPI Application
 URL Shortener with real-time analytics
 """
 
@@ -47,7 +47,7 @@ clicks = clicks_db
 
 # Initialize FastAPI app
 app = FastAPI(
-    title="LinkProxy API",
+    title="SuperintelligenceURLs API",
     description="URL Shortener with real-time analytics",
     version="1.0.0",
     docs_url="/docs"
@@ -100,7 +100,7 @@ class URLRecord:
 async def root():
     """Health check endpoint"""
     return {
-        "service": "LinkProxy",
+        "service": "SuperintelligenceURLs",
         "status": "active",
         "version": "1.0.0",
         "timestamp": datetime.utcnow().isoformat(),
@@ -483,7 +483,7 @@ async def health_check():
     """Health check endpoint"""
     return {
         "status": "healthy",
-        "service": "LinkProxy",
+        "service": "SuperintelligenceURLs",
         "timestamp": datetime.utcnow().isoformat(),
         "metrics": {
             "total_urls": len(urls_db),
@@ -496,7 +496,7 @@ async def health_check():
 if __name__ == "__main__":
     import uvicorn
 
-    print("Starting LinkProxy API server...")
+    print("Starting SuperintelligenceURLs API server...")
     print("Dashboard: http://localhost:8000/docs")
     print("Create URLs: POST http://localhost:8000/shorten")
 

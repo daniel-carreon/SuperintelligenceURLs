@@ -89,7 +89,7 @@ python test_quick.py
 ```
 
 ## 🌐 **Base de Datos**
-- **Supabase configurado** con tu project-ref: `hodawgekwhmbywubydau`
+- **Supabase** configurado (ver `.env.example` para setup)
 - **Schema aplicado** con tablas `urls` y `clicks`
 - **Analytics functions** disponibles para queries SQL directos
 

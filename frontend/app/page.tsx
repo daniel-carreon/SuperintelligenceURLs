@@ -26,7 +26,7 @@ export default function Home() {
                   <Sparkles className="w-6 h-6 text-white" />
                 </div>
                 <span className="text-2xl font-bold text-gradient-holographic">
-                  LinkProxy
+                  SuperintelligenceURLs
                 </span>
                 <span className="px-2 py-1 text-xs font-semibold bg-neon-cyan/20 text-neon-cyan rounded-full border border-neon-cyan/30 animate-pulse">
                   2030
@@ -205,7 +205,7 @@ export default function Home() {
                 <span>using Next.js, FastAPI, and Supabase</span>
               </div>
               <div className="flex items-center justify-center gap-4 text-sm text-gray-500">
-                <span>© 2025 LinkProxy</span>
+                <span>© 2025 SuperintelligenceURLs</span>
                 <span>•</span>
                 <span>Powered by Superintelligence</span>
               </div>

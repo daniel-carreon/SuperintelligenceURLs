@@ -74,3 +74,6 @@ coverage/
 # Claude Code
 .claude/todos/
 .claude/cache/
+
+# MCP Configuration (contains sensitive tokens)
+.mcp.json

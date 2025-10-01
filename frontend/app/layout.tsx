@@ -5,7 +5,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "LinkProxy - URL Shortener with Real-time Analytics",
+  title: "SuperintelligenceURLs - URL Shortener with Real-time Analytics",
   description: "Shorten URLs and track analytics in real-time. Free URL shortener with advanced device, geographic, and traffic source analytics.",
   keywords: ["url shortener", "link shortener", "analytics", "bitly alternative", "short links"],
 };
