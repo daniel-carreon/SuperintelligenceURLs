@@ -10,16 +10,16 @@ This project uses a **monorepo structure** with separate services for frontend a
 
 ### **Backend Service**
 
-**Root Directory:** `/backend`
+**Root Directory:** `/` (leave as root)
 
-**Build Command:** (Auto-detected by Nixpacks)
+**Build Command:** (Custom)
 ```bash
-pip install -r requirements.txt
+cd backend && pip install -r requirements.txt
 ```
 
-**Start Command:**
+**Start Command:** (Custom)
 ```bash
-uvicorn main:app --host 0.0.0.0 --port $PORT
+cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT
 ```
 
 **Environment Variables:**
@@ -36,16 +36,16 @@ PORT=${{RAILWAY_PORT}}
 
 ### **Frontend Service**
 
-**Root Directory:** `/frontend`
+**Root Directory:** `/` (leave as root)
 
-**Build Command:**
+**Build Command:** (Custom)
 ```bash
-npm install && npm run build
+cd frontend && npm install && npm run build
 ```
 
-**Start Command:**
+**Start Command:** (Custom)
 ```bash
-npm start
+cd frontend && npm start
 ```
 
 **Environment Variables:**
