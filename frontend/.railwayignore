@@ -1,0 +1,10 @@
+# Ignore backend when building frontend
+../backend/
+backend/
+**/backend/
+
+# Ignore local development
+node_modules/
+.next/
+.env.local
+*.log
