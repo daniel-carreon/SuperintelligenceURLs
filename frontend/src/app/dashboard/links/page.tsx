@@ -149,15 +149,13 @@ export default function LinksPage() {
                 <div className="relative z-10 flex items-start justify-between">
                   <div className="flex-1 min-w-0 space-y-4">
                     <div className="flex items-center gap-3">
-                      <a
-                        href={`/${link.short_code}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <Link
+                        href={`/dashboard/analytics?code=${link.short_code}`}
                         className="text-3xl font-black text-gradient-holographic hover:scale-105 transition-transform flex items-center gap-3 group"
                       >
                         /{link.short_code}
-                        <ExternalLink className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                      </a>
+                        <BarChart3 className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                      </Link>
                       {link.title && (
                         <span className="px-3 py-1 glass rounded-lg text-xs font-semibold text-white border border-white/10">
                           {link.title}

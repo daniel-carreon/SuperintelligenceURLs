@@ -343,6 +343,16 @@ async def track_click(short_code: str, url_id: str, request: Request, start_time
     user_agent = request.headers.get('user-agent', '')
     referer = request.headers.get('referer')
 
+    # Debug logging for IP detection
+    x_forwarded_for = request.headers.get('x-forwarded-for')
+    x_real_ip = request.headers.get('x-real-ip')
+    client_host = request.client.host if request.client else None
+    print(f"🔍 IP Detection Debug:")
+    print(f"   x-forwarded-for: {x_forwarded_for}")
+    print(f"   x-real-ip: {x_real_ip}")
+    print(f"   request.client.host: {client_host}")
+    print(f"   ✅ Final IP used: {ip_address}")
+
     # Advanced user agent parsing
     device_info = parse_user_agent(user_agent)
 
@@ -350,9 +360,18 @@ async def track_click(short_code: str, url_id: str, request: Request, start_time
     location_data = {}
     try:
         if ip_address and ip_address not in ['127.0.0.1', 'localhost', 'testclient']:
+            print(f"🌍 Calling geolocation API for IP: {ip_address}")
             location_data = await get_ip_location(ip_address)
+            print(f"✅ Geolocation result: {location_data.get('country_name', 'Unknown')} | Provider: {location_data.get('provider', 'none')}")
+        else:
+            print(f"⚠️  Geolocation SKIPPED - localhost IP: {ip_address}")
+            location_data = {
+                'country_name': 'Unknown (localhost)',
+                'city': None,
+                'provider': 'skipped'
+            }
     except Exception as e:
-        print(f"Geolocation failed for {ip_address}: {e}")
+        print(f"❌ Geolocation failed for {ip_address}: {e}")
         location_data = {
             'country_name': 'Unknown',
             'city': None,
