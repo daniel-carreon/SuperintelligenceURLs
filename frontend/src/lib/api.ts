@@ -42,6 +42,7 @@ export interface ClickData {
   os_name?: string;
   referrer_domain?: string;
   referrer_type?: string;
+  referrer_source?: string;
   video_id?: string;
   video_platform?: string;
   platform?: string;
