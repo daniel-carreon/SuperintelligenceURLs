@@ -19,6 +19,12 @@ from domain.services.url_generator import generate_short_code, validate_short_co
 # Import advanced analytics services
 from infrastructure.external_apis.geolocation_client import get_ip_location
 from infrastructure.external_apis.user_agent_parser import parse_user_agent
+from infrastructure.external_apis.youtube_parser import parse_youtube_url
+from infrastructure.external_apis.temporal_features import (
+    extract_temporal_features,
+    generate_session_id,
+    track_session
+)
 
 # Import folder service
 from application.services.folder_service import FolderService
