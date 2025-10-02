@@ -49,17 +49,31 @@ class AuthMiddleware(BaseHTTPMiddleware):
         authorization = request.headers.get("authorization")
 
         if not authorization or not authorization.startswith("Bearer "):
-            raise HTTPException(
+            from fastapi.responses import JSONResponse
+            return JSONResponse(
                 status_code=401,
-                detail="Authentication required"
+                content={"detail": "Authentication required"},
+                headers={
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Credentials": "true",
+                    "Access-Control-Allow-Methods": "*",
+                    "Access-Control-Allow-Headers": "*",
+                }
             )
 
         token = authorization.replace("Bearer ", "")
 
         if not is_valid_token(token):
-            raise HTTPException(
+            from fastapi.responses import JSONResponse
+            return JSONResponse(
                 status_code=401,
-                detail="Invalid or expired token"
+                content={"detail": "Invalid or expired token"},
+                headers={
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Credentials": "true",
+                    "Access-Control-Allow-Methods": "*",
+                    "Access-Control-Allow-Headers": "*",
+                }
             )
 
         # Token is valid, proceed
