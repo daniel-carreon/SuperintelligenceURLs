@@ -48,8 +48,8 @@ clicks = clicks_db
 # Initialize FastAPI app
 app = FastAPI(
     title="SuperintelligenceURLs API",
-    description="URL Shortener with real-time analytics",
-    version="1.0.0",
+    description="URL Shortener with real-time analytics and authentication",
+    version="1.0.1",
     docs_url="/docs"
 )
 
