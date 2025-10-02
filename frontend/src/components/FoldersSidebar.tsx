@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { getFolderTree, createFolder, updateFolder, type Folder } from '@/lib/folders-api';
+import { logout } from '@/lib/auth';
 import { GlassCard } from './ui/GlassCard';
 import Button from './ui/Button';
 import { HexColorPicker } from './ui/HexColorPicker';
-import { FolderPlus, ChevronDown, ChevronRight, Pencil } from 'lucide-react';
+import { FolderPlus, ChevronDown, ChevronRight, Pencil, LogOut } from 'lucide-react';
 
 interface FoldersSidebarProps {
   selectedFolder?: string | null;
@@ -13,6 +15,7 @@ interface FoldersSidebarProps {
 }
 
 export default function FoldersSidebar({ selectedFolder, onSelectFolder }: FoldersSidebarProps) {
+  const router = useRouter();
   const [folders, setFolders] = useState<Folder[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
@@ -22,6 +25,11 @@ export default function FoldersSidebar({ selectedFolder, onSelectFolder }: Folde
   useEffect(() => {
     loadFolders();
   }, []);
+
+  const handleLogout = async () => {
+    await logout();
+    router.push('/login');
+  };
 
   const loadFolders = async () => {
     try {
@@ -160,6 +168,19 @@ export default function FoldersSidebar({ selectedFolder, onSelectFolder }: Folde
               ) : (
                 folders.map((folder) => renderFolder(folder))
               )}
+            </div>
+
+            {/* Logout Button */}
+            <div className="pt-4 mt-4 border-t border-white/10">
+              <Button
+                variant="secondary"
+                size="sm"
+                className="w-full"
+                onClick={handleLogout}
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Logout
+              </Button>
             </div>
           </div>
         </GlassCard>

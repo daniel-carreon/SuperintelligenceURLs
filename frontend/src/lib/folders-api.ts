@@ -3,6 +3,8 @@
  * Handles folder organization and management
  */
 
+import { getAuthHeader } from './auth';
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 // ==================== Types ====================
@@ -55,7 +57,11 @@ export interface FolderLinks {
  * Get all folders
  */
 export async function getAllFolders(): Promise<Folder[]> {
-  const response = await fetch(`${API_URL}/folders/`);
+  const response = await fetch(`${API_URL}/folders/`, {
+    headers: {
+      ...getAuthHeader(),
+    },
+  });
 
   if (!response.ok) {
     const error = await response.json();
@@ -69,7 +75,11 @@ export async function getAllFolders(): Promise<Folder[]> {
  * Get folder tree structure
  */
 export async function getFolderTree(): Promise<FolderTree> {
-  const response = await fetch(`${API_URL}/folders/tree`);
+  const response = await fetch(`${API_URL}/folders/tree`, {
+    headers: {
+      ...getAuthHeader(),
+    },
+  });
 
   if (!response.ok) {
     const error = await response.json();
@@ -83,7 +93,11 @@ export async function getFolderTree(): Promise<FolderTree> {
  * Get folder by ID
  */
 export async function getFolder(folderId: string): Promise<Folder> {
-  const response = await fetch(`${API_URL}/folders/${folderId}`);
+  const response = await fetch(`${API_URL}/folders/${folderId}`, {
+    headers: {
+      ...getAuthHeader(),
+    },
+  });
 
   if (!response.ok) {
     const error = await response.json();
@@ -101,6 +115,7 @@ export async function createFolder(data: FolderCreate): Promise<Folder> {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      ...getAuthHeader(),
     },
     body: JSON.stringify({
       name: data.name,
@@ -129,6 +144,7 @@ export async function updateFolder(
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
+      ...getAuthHeader(),
     },
     body: JSON.stringify(data),
   });
@@ -152,6 +168,9 @@ export async function deleteFolder(
     `${API_URL}/folders/${folderId}?delete_links=${deleteLinks}`,
     {
       method: 'DELETE',
+      headers: {
+        ...getAuthHeader(),
+      },
     }
   );
 
@@ -172,6 +191,7 @@ export async function assignLinkToFolder(
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      ...getAuthHeader(),
     },
     body: JSON.stringify({
       url_id: urlId,
@@ -196,6 +216,7 @@ export async function removeLinkFromFolder(
     method: 'DELETE',
     headers: {
       'Content-Type': 'application/json',
+      ...getAuthHeader(),
     },
     body: JSON.stringify({
       url_id: urlId,
@@ -213,7 +234,11 @@ export async function removeLinkFromFolder(
  * Get all links in a folder
  */
 export async function getFolderLinks(folderId: string): Promise<FolderLinks> {
-  const response = await fetch(`${API_URL}/folders/${folderId}/links`);
+  const response = await fetch(`${API_URL}/folders/${folderId}/links`, {
+    headers: {
+      ...getAuthHeader(),
+    },
+  });
 
   if (!response.ok) {
     const error = await response.json();
@@ -227,7 +252,11 @@ export async function getFolderLinks(folderId: string): Promise<FolderLinks> {
  * Get folder analytics
  */
 export async function getFolderAnalytics(folderId: string): Promise<any> {
-  const response = await fetch(`${API_URL}/folders/${folderId}/analytics`);
+  const response = await fetch(`${API_URL}/folders/${folderId}/analytics`, {
+    headers: {
+      ...getAuthHeader(),
+    },
+  });
 
   if (!response.ok) {
     const error = await response.json();

@@ -62,6 +62,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Authentication middleware
+from api.auth_middleware import AuthMiddleware
+app.add_middleware(AuthMiddleware)
+
+# Include auth router
+from api.auth_router import router as auth_router
+app.include_router(auth_router)
+
 # Include folders router
 from api.folders_router import router as folders_router_impl, folder_service as _folder_service_var
 # Set the folder service instance

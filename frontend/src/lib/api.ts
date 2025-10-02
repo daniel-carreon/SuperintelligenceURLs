@@ -3,6 +3,8 @@
  * Handles all HTTP requests to the FastAPI backend
  */
 
+import { getAuthHeader } from './auth';
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 // ==================== Types ====================
@@ -121,6 +123,7 @@ export async function createShortURL(data: URLCreate): Promise<URLResponse> {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      ...getAuthHeader(),
     },
     body: JSON.stringify(data),
   });
@@ -137,7 +140,11 @@ export async function createShortURL(data: URLCreate): Promise<URLResponse> {
  * Get all URLs
  */
 export async function getAllURLs(): Promise<URLResponse[]> {
-  const response = await fetch(`${API_URL}/urls/all`);
+  const response = await fetch(`${API_URL}/urls/all`, {
+    headers: {
+      ...getAuthHeader(),
+    },
+  });
 
   if (!response.ok) {
     const error = await response.json();
@@ -152,7 +159,11 @@ export async function getAllURLs(): Promise<URLResponse[]> {
  * Get analytics for a specific short code
  */
 export async function getAnalytics(shortCode: string): Promise<AnalyticsResponse> {
-  const response = await fetch(`${API_URL}/analytics/${shortCode}`);
+  const response = await fetch(`${API_URL}/analytics/${shortCode}`, {
+    headers: {
+      ...getAuthHeader(),
+    },
+  });
 
   if (!response.ok) {
     const error = await response.json();
@@ -168,6 +179,9 @@ export async function getAnalytics(shortCode: string): Promise<AnalyticsResponse
 export async function deleteURL(shortCode: string): Promise<void> {
   const response = await fetch(`${API_URL}/${shortCode}`, {
     method: 'DELETE',
+    headers: {
+      ...getAuthHeader(),
+    },
   });
 
   if (!response.ok) {
