@@ -59,7 +59,8 @@ function AnalyticsContent() {
   const referrerData = analytics?.recent_clicks && Array.isArray(analytics.recent_clicks)
     ? Object.entries(
         analytics.recent_clicks.reduce((acc, click) => {
-          acc[click.referrer_source] = (acc[click.referrer_source] || 0) + 1;
+          const source = click.referrer_source || 'Unknown';
+          acc[source] = (acc[source] || 0) + 1;
           return acc;
         }, {} as Record<string, number>)
       ).map(([name, value]) => ({ name, clicks: value }))
@@ -68,7 +69,8 @@ function AnalyticsContent() {
   const countryData = analytics?.recent_clicks && Array.isArray(analytics.recent_clicks)
     ? Object.entries(
         analytics.recent_clicks.reduce((acc, click) => {
-          acc[click.country_name] = (acc[click.country_name] || 0) + 1;
+          const country = click.country_name || 'Unknown';
+          acc[country] = (acc[country] || 0) + 1;
           return acc;
         }, {} as Record<string, number>)
       )

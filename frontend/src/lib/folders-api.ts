@@ -17,6 +17,7 @@ export interface Folder {
   updated_at: string;
   link_count: number;
   subfolder_count: number;
+  subfolders?: Folder[];
 }
 
 export interface FolderCreate {

@@ -35,8 +35,8 @@ export default function LinksPage() {
     try {
       setLoading(true);
       const data = await getAllURLs();
-      setLinks(data.urls);
-      console.log(`✅ Loaded ${data.total} links from backend`);
+      setLinks(data);
+      console.log(`✅ Loaded ${data.length} links from backend`);
     } catch (error) {
       console.error('Failed to load links:', error);
     } finally {
@@ -53,7 +53,7 @@ export default function LinksPage() {
 
   const handleAssignToFolder = async (urlId: string, folderId: string) => {
     try {
-      await assignLinkToFolder({ url_id: urlId, folder_id: folderId });
+      await assignLinkToFolder(urlId, folderId);
       setShowFolderDropdown(null);
       alert('Link assigned to folder!');
     } catch (error) {
