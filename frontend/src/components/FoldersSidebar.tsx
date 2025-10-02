@@ -21,6 +21,7 @@ export default function FoldersSidebar({ selectedFolder, onSelectFolder }: Folde
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingFolder, setEditingFolder] = useState<Folder | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     loadFolders();
@@ -118,7 +119,53 @@ export default function FoldersSidebar({ selectedFolder, onSelectFolder }: Folde
 
   return (
     <>
-      <div className="w-80 h-screen fixed left-0 top-0 p-4 overflow-y-auto">
+      {/* Mobile Toggle Button */}
+      <button
+        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        className="md:hidden fixed top-4 left-4 z-[200] w-12 h-12 glass-strong rounded-xl flex items-center justify-center border border-white/10 hover:border-neon-cyan/50 transition-all"
+        aria-label="Toggle sidebar"
+      >
+        <svg
+          className="w-6 h-6 text-white"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          {isSidebarOpen ? (
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
+          ) : (
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 6h16M4 12h16M4 18h16"
+            />
+          )}
+        </svg>
+      </button>
+
+      {/* Backdrop for mobile */}
+      {isSidebarOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[90]"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <div
+        className={`
+          w-80 h-screen fixed left-0 top-0 p-4 overflow-y-auto z-[100]
+          transition-transform duration-300 ease-in-out
+          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          md:translate-x-0
+        `}
+      >
         <GlassCard intensity="strong" className="h-full">
           <div className="p-4 space-y-4">
             {/* Header */}

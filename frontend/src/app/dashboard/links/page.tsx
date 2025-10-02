@@ -100,7 +100,7 @@ export default function LinksPage() {
         onSelectFolder={setSelectedFolder}
       />
 
-      <div className="relative z-10 flex-1 ml-80">
+      <div className="relative z-10 flex-1 md:ml-80">
         {/* Header */}
         <nav className="glass-strong border-b border-white/10 sticky top-0 z-50 backdrop-blur-xl">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
