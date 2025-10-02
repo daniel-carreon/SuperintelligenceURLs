@@ -8,7 +8,8 @@ export default function RedirectPage({ params }: { params: Promise<{ shortCode: 
 
   useEffect(() => {
     // Redirect to backend for tracking
-    window.location.href = `http://localhost:8000/${shortCode}`;
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    window.location.href = `${API_URL}/${shortCode}`;
   }, [shortCode]);
 
   return (
