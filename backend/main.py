@@ -53,11 +53,7 @@ app = FastAPI(
     docs_url="/docs"
 )
 
-# Authentication middleware (add first, executes second)
-from api.auth_middleware import AuthMiddleware
-app.add_middleware(AuthMiddleware)
-
-# CORS middleware (add last, executes first - IMPORTANT!)
+# CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -65,6 +61,27 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Authentication middleware
+from api.auth_middleware import AuthMiddleware
+app.add_middleware(AuthMiddleware)
+
+# Global exception handler for CORS on errors
+from fastapi import HTTPException
+from fastapi.responses import JSONResponse
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request, exc):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Allow-Methods": "*",
+            "Access-Control-Allow-Headers": "*",
+        }
+    )
 
 # Include auth router
 from api.auth_router import router as auth_router
