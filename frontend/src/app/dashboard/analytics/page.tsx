@@ -7,7 +7,7 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { TrendingUp, Globe, Monitor, ExternalLink, RefreshCw, Sparkles, Activity } from 'lucide-react';
+import { TrendingUp, Globe, Monitor, ExternalLink, RefreshCw, Sparkles, Activity, Youtube, Clock } from 'lucide-react';
 import Link from 'next/link';
 
 // Holographic color palette for charts
@@ -77,6 +77,14 @@ function AnalyticsContent() {
         .map(([name, clicks]) => ({ name, clicks }))
         .sort((a, b) => b.clicks - a.clicks)
         .slice(0, 5)
+    : [];
+
+  // Prepare video sources data
+  const videoSourcesData = analytics?.video_sources
+    ? Object.entries(analytics.video_sources).map(([videoKey, count]) => {
+        const [platform, videoId] = videoKey.split(':');
+        return { platform, videoId, clicks: count };
+      }).sort((a, b) => b.clicks - a.clicks)
     : [];
 
   return (
@@ -336,6 +344,59 @@ function AnalyticsContent() {
                 </GlassCard>
               </div>
 
+              {/* Video Sources Widget */}
+              {videoSourcesData && videoSourcesData.length > 0 && (
+                <GlassCard glow="pink" className="relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-pink-500/5 to-purple-500/5" />
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-12 h-12 bg-gradient-to-br from-pink-500 to-purple-600 rounded-xl flex items-center justify-center">
+                        <Youtube className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-bold text-white">Video Traffic Sources</h3>
+                        <p className="text-xs text-gray-400">Links clicked from videos</p>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      {videoSourcesData.slice(0, 5).map((video, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-4 glass rounded-xl border border-white/10 hover:border-neon-cyan/50 transition-colors group">
+                          <div className="flex items-center gap-4 flex-1">
+                            <div className="flex-shrink-0">
+                              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-red-500 to-pink-600 flex items-center justify-center">
+                                <Youtube className="w-5 h-5 text-white" />
+                              </div>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-xs font-semibold text-neon-cyan uppercase">{video.platform}</span>
+                                <span className="w-1 h-1 rounded-full bg-gray-600" />
+                                <span className="text-xs text-gray-400 font-mono truncate">{video.videoId}</span>
+                              </div>
+                              <a
+                                href={`https://${video.platform}.com/watch?v=${video.videoId}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sm text-gray-300 hover:text-neon-cyan transition-colors flex items-center gap-1 group-hover:underline"
+                              >
+                                View on {video.platform.charAt(0).toUpperCase() + video.platform.slice(1)}
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            </div>
+                          </div>
+                          <div className="flex-shrink-0 ml-4">
+                            <div className="text-right">
+                              <div className="text-2xl font-black text-gradient-holographic">{video.clicks}</div>
+                              <div className="text-xs text-gray-400">clicks</div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </GlassCard>
+              )}
+
               {/* Recent Clicks Table */}
               <GlassCard intensity="strong" className="relative overflow-hidden">
                 <div className="absolute inset-0 gradient-holographic opacity-5" />
@@ -352,8 +413,8 @@ function AnalyticsContent() {
                           <th className="px-4 py-4 text-left font-semibold text-gray-400 uppercase tracking-wider text-xs">Time</th>
                           <th className="px-4 py-4 text-left font-semibold text-gray-400 uppercase tracking-wider text-xs">Location</th>
                           <th className="px-4 py-4 text-left font-semibold text-gray-400 uppercase tracking-wider text-xs">Device</th>
-                          <th className="px-4 py-4 text-left font-semibold text-gray-400 uppercase tracking-wider text-xs">Browser</th>
                           <th className="px-4 py-4 text-left font-semibold text-gray-400 uppercase tracking-wider text-xs">Source</th>
+                          <th className="px-4 py-4 text-left font-semibold text-gray-400 uppercase tracking-wider text-xs">Video</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/5">
@@ -375,14 +436,21 @@ function AnalyticsContent() {
                                 {click.device_type}
                               </span>
                             </td>
-                            <td className="px-4 py-4 text-gray-300 text-xs">
-                              <div>{click.browser_name}</div>
-                              <div className="text-gray-500">{click.os_name}</div>
-                            </td>
                             <td className="px-4 py-4">
                               <span className="px-3 py-1 bg-neon-cyan/10 text-neon-cyan rounded-lg text-xs font-semibold border border-neon-cyan/30">
                                 {click.referrer_source}
                               </span>
+                            </td>
+                            <td className="px-4 py-4">
+                              {click.video_platform ? (
+                                <div className="flex items-center gap-2">
+                                  <Youtube className="w-4 h-4 text-red-500" />
+                                  <span className="text-xs font-semibold text-red-400 uppercase">{click.video_platform}</span>
+                                  <span className="text-gray-500 text-xs font-mono">({click.video_id?.substring(0, 8)}...)</span>
+                                </div>
+                              ) : (
+                                <span className="text-gray-600 text-xs">-</span>
+                              )}
                             </td>
                           </tr>
                         ))
