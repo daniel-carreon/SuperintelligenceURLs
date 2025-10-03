@@ -83,7 +83,7 @@ function AnalyticsContent() {
   const videoSourcesData = analytics?.video_sources
     ? Object.entries(analytics.video_sources).map(([videoKey, count]) => {
         const [platform, videoId] = videoKey.split(':');
-        return { platform, videoId, clicks: count };
+        return { platform, videoId, clicks: Number(count) };
       }).sort((a, b) => b.clicks - a.clicks)
     : [];
 

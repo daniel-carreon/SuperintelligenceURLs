@@ -5,11 +5,13 @@ import Button from '@/components/ui/Button';
 import FoldersSidebar from '@/components/FoldersSidebar';
 import { Link2, Copy, BarChart3, ExternalLink, Check, Sparkles, TrendingUp, FolderInput, Trash2 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { getAllFolders, assignLinkToFolder, type Folder } from '@/lib/folders-api';
 import { getAllURLs, type URLResponse } from '@/lib/api';
 
 export default function LinksPage() {
+  const router = useRouter();
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [folders, setFolders] = useState<Folder[]>([]);
   const [showFolderDropdown, setShowFolderDropdown] = useState<string | null>(null);
@@ -144,18 +146,21 @@ export default function LinksPage() {
                 ? links.filter(link => link.folder_id === selectedFolder)
                 : links
               ).map((link, idx) => (
-              <GlassCard key={link.id} glow="cyan" className="relative overflow-hidden group animate-fade-in" style={{ animationDelay: `${idx * 100}ms` }}>
+              <GlassCard
+                key={link.id}
+                glow="cyan"
+                className="relative overflow-hidden group animate-fade-in cursor-pointer hover:border-neon-cyan/50 transition-all"
+                style={{ animationDelay: `${idx * 100}ms` }}
+                onClick={() => router.push(`/dashboard/analytics?code=${link.short_code}`)}
+              >
                 <div className="absolute inset-0 gradient-holographic opacity-0 group-hover:opacity-5 transition-opacity duration-300" />
                 <div className="relative z-10 flex items-start justify-between">
                   <div className="flex-1 min-w-0 space-y-4">
                     <div className="flex items-center gap-3">
-                      <Link
-                        href={`/dashboard/analytics?code=${link.short_code}`}
-                        className="text-3xl font-black text-gradient-holographic hover:scale-105 transition-transform flex items-center gap-3 group"
-                      >
+                      <div className="text-3xl font-black text-gradient-holographic flex items-center gap-3">
                         /{link.short_code}
-                        <BarChart3 className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                      </Link>
+                        <BarChart3 className="w-5 h-5 transition-transform" />
+                      </div>
                       {link.title && (
                         <span className="px-3 py-1 glass rounded-lg text-xs font-semibold text-white border border-white/10">
                           {link.title}
@@ -194,7 +199,7 @@ export default function LinksPage() {
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-3 ml-6">
+                  <div className="flex flex-col gap-3 ml-6" onClick={(e) => e.stopPropagation()}>
                     <Button
                       variant="secondary"
                       size="md"
