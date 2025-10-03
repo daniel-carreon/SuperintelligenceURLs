@@ -31,6 +31,11 @@ class URLRepository:
         response = self.table.select('*').eq('short_code', short_code).eq('is_active', True).execute()
         return response.data[0] if response.data else None
 
+    def get_by_id(self, url_id: str) -> Optional[dict]:
+        """Obtener URL por ID"""
+        response = self.table.select('*').eq('id', url_id).execute()
+        return response.data[0] if response.data else None
+
     def get_all(self, limit: int = 100) -> List[dict]:
         """Obtener todas las URLs activas con folder_id"""
         # Get all URLs

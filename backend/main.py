@@ -19,7 +19,7 @@ from domain.services.url_generator import generate_short_code, validate_short_co
 # Import advanced analytics services
 from infrastructure.external_apis.geolocation_client import get_ip_location
 from infrastructure.external_apis.user_agent_parser import parse_user_agent
-from infrastructure.external_apis.youtube_parser import parse_youtube_url
+from infrastructure.external_apis.video_attribution import parse_video_referrer
 from infrastructure.external_apis.temporal_features import (
     extract_temporal_features,
     generate_session_id,
@@ -341,7 +341,7 @@ async def delete_url(short_code: str):
 
 
 async def track_click(short_code: str, url_id: str, request: Request, start_time: float):
-    """Track click event with advanced analytics"""
+    """Track click event with advanced analytics + temporal features"""
     analytics_start = time.perf_counter()
 
     # Extract request metadata
@@ -349,15 +349,25 @@ async def track_click(short_code: str, url_id: str, request: Request, start_time
     user_agent = request.headers.get('user-agent', '')
     referer = request.headers.get('referer')
 
-    # Debug logging for IP detection
-    x_forwarded_for = request.headers.get('x-forwarded-for')
-    x_real_ip = request.headers.get('x-real-ip')
-    client_host = request.client.host if request.client else None
-    print(f"🔍 IP Detection Debug:")
-    print(f"   x-forwarded-for: {x_forwarded_for}")
-    print(f"   x-real-ip: {x_real_ip}")
-    print(f"   request.client.host: {client_host}")
-    print(f"   ✅ Final IP used: {ip_address}")
+    # Get URL record for temporal calculations
+    url_record = url_repo.get_by_id(url_id)
+    url_created_at = url_record.get('created_at') if url_record else None
+
+    # Parse video attribution from REFERER (YouTube, TikTok, Instagram, etc.)
+    video_data = parse_video_referrer(referer)
+    if video_data.get('video_platform'):
+        print(f"🎥 Video detected: {video_data.get('video_platform')} | ID: {video_data.get('video_id')}")
+
+    # Generate session ID for tracking
+    current_time = datetime.utcnow()
+    session_id = generate_session_id(ip_address, user_agent, current_time)
+
+    # Track session metrics
+    session_metrics = track_session(session_id, current_time)
+
+    # Extract temporal features
+    temporal_features = extract_temporal_features(current_time, url_created_at)
+    print(f"⏰ Temporal: {temporal_features.get('day_of_week')} (day), {temporal_features.get('hour_of_day')}h | Session: {session_metrics.get('clicks_in_session')} clicks")
 
     # Advanced user agent parsing
     device_info = parse_user_agent(user_agent)
@@ -366,74 +376,76 @@ async def track_click(short_code: str, url_id: str, request: Request, start_time
     location_data = {}
     try:
         if ip_address and ip_address not in ['127.0.0.1', 'localhost', 'testclient']:
-            print(f"🌍 Calling geolocation API for IP: {ip_address}")
             location_data = await get_ip_location(ip_address)
-            print(f"✅ Geolocation result: {location_data.get('country_name', 'Unknown')} | Provider: {location_data.get('provider', 'none')}")
+            print(f"🌍 Location: {location_data.get('country_name', 'Unknown')}, {location_data.get('city', 'N/A')}")
         else:
-            print(f"⚠️  Geolocation SKIPPED - localhost IP: {ip_address}")
-            location_data = {
-                'country_name': 'Unknown (localhost)',
-                'city': None,
-                'provider': 'skipped'
-            }
+            location_data = {'country_name': 'Unknown', 'city': None}
     except Exception as e:
-        print(f"❌ Geolocation failed for {ip_address}: {e}")
-        location_data = {
-            'country_name': 'Unknown',
-            'city': None,
-            'provider': 'fallback'
-        }
+        print(f"❌ Geolocation failed: {e}")
+        location_data = {'country_name': 'Unknown', 'city': None}
 
     # Extract referrer source
     referrer_source = extract_referrer_source(referer)
 
     analytics_time = (time.perf_counter() - analytics_start) * 1000
 
-    # Create comprehensive click record
+    # Create comprehensive click record with NEW temporal + video fields
     click_data = {
-        'id': f"click_{len(clicks_db)}",
         'url_id': url_id,
         'short_code': short_code,
         'ip_address': ip_address,
         'user_agent': user_agent,
         'referer': referer,
-        'referrer_source': referrer_source,
 
         # Device Analytics
         'device_type': device_info.get('device_type', 'unknown'),
-        'device_brand': device_info.get('device_brand'),
-        'device_model': device_info.get('device_model'),
         'browser_name': device_info.get('browser_name', 'Unknown'),
         'browser_version': device_info.get('browser_version'),
         'os_name': device_info.get('os_name', 'Unknown'),
         'os_version': device_info.get('os_version'),
-        'is_mobile': device_info.get('is_mobile', False),
-        'is_tablet': device_info.get('is_tablet', False),
-        'is_desktop': device_info.get('is_desktop', False),
-        'is_bot': device_info.get('is_bot', False),
 
         # Geographic Analytics
         'country_name': location_data.get('country_name', 'Unknown'),
         'country_code': location_data.get('country_code'),
-        'region': location_data.get('region'),
         'city': location_data.get('city'),
-        'timezone': location_data.get('timezone'),
-        'isp': location_data.get('isp'),
-        'latitude': location_data.get('latitude'),
-        'longitude': location_data.get('longitude'),
-        'geo_provider': location_data.get('provider', 'none'),
 
-        # Performance Metrics
-        'clicked_at': datetime.utcnow().isoformat(),
-        'response_time_ms': int((time.perf_counter() - start_time) * 1000),
-        'analytics_time_ms': round(analytics_time, 2)
+        # Referrer Analytics
+        'referrer_domain': referrer_source,
+        'referrer_type': referrer_source,
+
+        # 🆕 VIDEO ATTRIBUTION (from REFERER)
+        'video_platform': video_data.get('video_platform'),
+        'video_id': video_data.get('video_id'),
+
+        # 🆕 TEMPORAL FEATURES
+        'hour_of_day': temporal_features.get('hour_of_day'),
+        'day_of_week': temporal_features.get('day_of_week'),
+        'is_weekend': temporal_features.get('is_weekend'),
+        'month': temporal_features.get('month'),
+        'time_since_creation_seconds': temporal_features.get('time_since_creation_seconds'),
+
+        # 🆕 SESSION TRACKING
+        'session_id': session_id,
+        'is_first_click': session_metrics.get('is_first_click'),
+        'is_returning_visitor': not session_metrics.get('is_first_click'),
+        'clicks_in_session': session_metrics.get('clicks_in_session'),
+
+        # Timestamps
+        'clicked_at': current_time,
+        'response_time_ms': int((time.perf_counter() - start_time) * 1000)
     }
 
-    # Store click event
-    clicks_db.append(click_data)
+    # 🆕 SAVE TO SUPABASE (instead of RAM)
+    try:
+        saved_click = click_repo.create(click_data)
+        print(f"✅ Click saved to Supabase: {saved_click.get('id') if saved_click else 'None'}")
+    except Exception as e:
+        print(f"❌ Failed to save click to Supabase: {e}")
+        # Fallback to RAM for backward compatibility
+        clicks_db.append(click_data)
 
     # Performance logging
-    print(f"📊 Analytics: {analytics_time:.2f}ms | Device: {device_info.get('device_type')} | Location: {location_data.get('country_name', 'Unknown')}")
+    print(f"📊 Analytics: {analytics_time:.2f}ms | Device: {device_info.get('device_type')} | Location: {location_data.get('country_name')}")
 
     return click_data
 
