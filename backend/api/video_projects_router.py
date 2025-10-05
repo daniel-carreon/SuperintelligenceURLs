@@ -22,6 +22,7 @@ class VideoProjectUpdateRequest(BaseModel):
     title: Optional[str] = None
     youtube_url: Optional[str] = None
     thumbnail_url: Optional[str] = None
+    description: Optional[str] = None
 
 
 class VideoProjectResponse(BaseModel):

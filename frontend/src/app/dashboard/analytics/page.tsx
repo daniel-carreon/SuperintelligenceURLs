@@ -6,7 +6,7 @@ import { getAnalytics, AnalyticsResponse } from '@/lib/api';
 import { GlassCard } from '@/components/ui/GlassCard';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
-import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { TrendingUp, Globe, Monitor, ExternalLink, RefreshCw, Sparkles, Activity, Youtube, Clock } from 'lucide-react';
 import Link from 'next/link';
 
@@ -85,6 +85,27 @@ function AnalyticsContent() {
         const [platform, videoId] = videoKey.split(':');
         return { platform, videoId, clicks: Number(count) };
       }).sort((a, b) => b.clicks - a.clicks)
+    : [];
+
+  // Prepare "Clicks over Time" data (similar to Bitly)
+  const clicksOverTimeData = analytics?.recent_clicks && Array.isArray(analytics.recent_clicks)
+    ? Object.entries(
+        analytics.recent_clicks.reduce((acc, click) => {
+          // Group by date (format: MM/DD)
+          const date = new Date(click.clicked_at);
+          const dateKey = `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}`;
+          acc[dateKey] = (acc[dateKey] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>)
+      )
+        .map(([date, clicks]) => ({ date, clicks }))
+        .sort((a, b) => {
+          // Sort by date
+          const [aMonth, aDay] = a.date.split('/').map(Number);
+          const [bMonth, bDay] = b.date.split('/').map(Number);
+          if (aMonth !== bMonth) return aMonth - bMonth;
+          return aDay - bDay;
+        })
     : [];
 
   return (
@@ -294,28 +315,25 @@ function AnalyticsContent() {
                 </GlassCard>
 
                 <GlassCard glow="cyan" className="relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-red-500/5" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-blue-500/5" />
                   <div className="relative z-10">
                     <div className="flex items-center gap-3 mb-6">
-                      <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl flex items-center justify-center">
-                        <ExternalLink className="w-6 h-6 text-white" />
+                      <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center">
+                        <Activity className="w-6 h-6 text-white" />
                       </div>
                       <div>
-                        <h3 className="text-base font-bold text-white">Traffic Sources</h3>
-                        <p className="text-xs text-gray-400">Referrer breakdown</p>
+                        <h3 className="text-base font-bold text-white">Clicks over Time</h3>
+                        <p className="text-xs text-gray-400">Daily interaction trends</p>
                       </div>
                     </div>
                     <ResponsiveContainer width="100%" height={280}>
-                      <BarChart data={referrerData} layout="vertical">
+                      <LineChart data={clicksOverTimeData}>
                         <XAxis
-                          type="number"
+                          dataKey="date"
                           stroke="#9ca3af"
                           style={{ fontSize: '12px' }}
                         />
                         <YAxis
-                          dataKey="name"
-                          type="category"
-                          width={100}
                           stroke="#9ca3af"
                           style={{ fontSize: '12px' }}
                         />
@@ -327,18 +345,15 @@ function AnalyticsContent() {
                             color: '#fff'
                           }}
                         />
-                        <Bar
+                        <Line
+                          type="monotone"
                           dataKey="clicks"
-                          fill="url(#referrerGradient)"
-                          radius={[0, 8, 8, 0]}
+                          stroke="#00fff5"
+                          strokeWidth={3}
+                          dot={{ fill: '#00fff5', r: 5 }}
+                          activeDot={{ r: 7 }}
                         />
-                        <defs>
-                          <linearGradient id="referrerGradient" x1="0" y1="0" x2="1" y2="0">
-                            <stop offset="0%" stopColor="#f59e0b" stopOpacity={1} />
-                            <stop offset="100%" stopColor="#ef4444" stopOpacity={0.8} />
-                          </linearGradient>
-                        </defs>
-                      </BarChart>
+                      </LineChart>
                     </ResponsiveContainer>
                   </div>
                 </GlassCard>

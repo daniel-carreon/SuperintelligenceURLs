@@ -44,23 +44,6 @@ export function VideoProjectCard({ project, links = [], onManageLinks, onEdit }:
             />
             {/* Gradient overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-dark-bg via-dark-bg/60 to-transparent" />
-
-            {/* Edit button */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit?.();
-              }}
-              className="absolute top-3 left-3 w-10 h-10 glass hover:glass-strong rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:scale-110"
-              title="Edit project"
-            >
-              <Pencil className="w-5 h-5 text-neon-cyan" />
-            </button>
-
-            {/* YouTube icon badge */}
-            <div className="absolute top-3 right-3 w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center shadow-2xl">
-              <Youtube className="w-6 h-6 text-white" />
-            </div>
           </div>
         ) : (
           // Fallback for projects without YouTube URL
@@ -167,19 +150,36 @@ export function VideoProjectCard({ project, links = [], onManageLinks, onEdit }:
         </button>
       )}
 
-      {/* YouTube Link */}
-      {project.youtube_url && (
-        <a
-          href={project.youtube_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={(e) => e.stopPropagation()}
-          className="mt-4 flex items-center gap-2 text-xs text-gray-400 hover:text-neon-cyan transition-colors group/link"
+      {/* Action Buttons - Bottom Right */}
+      <div className="mt-4 flex items-center justify-end gap-2">
+        {/* Edit Button */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit?.();
+          }}
+          className="glass hover:glass-strong px-3 py-2 rounded-lg flex items-center gap-2 text-xs font-medium text-gray-400 hover:text-neon-cyan transition-all hover:scale-105"
+          title="Edit project"
         >
-          <ExternalLink className="w-3 h-3 group-hover/link:translate-x-0.5 transition-transform" />
-          <span className="truncate">View on YouTube</span>
-        </a>
-      )}
+          <Pencil className="w-4 h-4" />
+          <span>Edit</span>
+        </button>
+
+        {/* YouTube Link Button */}
+        {project.youtube_url && (
+          <a
+            href={project.youtube_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="glass hover:glass-strong px-3 py-2 rounded-lg flex items-center gap-2 text-xs font-medium text-gray-400 hover:text-red-500 transition-all hover:scale-105 group/youtube"
+          >
+            <Youtube className="w-4 h-4" />
+            <span>YouTube</span>
+            <ExternalLink className="w-3 h-3 group-hover/youtube:translate-x-0.5 transition-transform" />
+          </a>
+        )}
+      </div>
 
       {/* Holographic glow effect on hover */}
       <div className="absolute inset-0 gradient-holographic opacity-0 group-hover:opacity-5 transition-opacity duration-300 pointer-events-none" />
