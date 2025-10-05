@@ -29,6 +29,9 @@ from infrastructure.external_apis.temporal_features import (
 # Import folder service
 from application.services.folder_service import FolderService
 
+# Import video project service
+from application.services.video_project_service import VideoProjectService
+
 # Import click tracker service
 from application.services.click_tracker_service import click_tracker_service
 
@@ -44,6 +47,9 @@ folder_repo = FolderRepository()
 
 # Initialize folder service with repository
 folder_service_instance = FolderService(folder_repo)
+
+# Initialize video project service with Supabase
+video_project_service_instance = VideoProjectService(use_supabase=True)
 
 # Legacy exports (mantener compatibilidad temporal)
 urls_db = {}
@@ -99,6 +105,13 @@ from api.folders_router import router as folders_router_impl, folder_service as 
 import api.folders_router as folders_router_module
 folders_router_module.folder_service = folder_service_instance
 app.include_router(folders_router_impl)
+
+# Include video projects router
+from api.video_projects_router import router as video_projects_router_impl, video_project_service as _video_project_service_var
+# Set the video project service instance
+import api.video_projects_router as video_projects_router_module
+video_projects_router_module.video_project_service = video_project_service_instance
+app.include_router(video_projects_router_impl)
 
 
 class URLRecord:
