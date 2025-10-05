@@ -37,7 +37,13 @@ export default function Home() {
                   href="/dashboard/links"
                   className="text-sm font-medium text-gray-300 hover:text-neon-cyan transition-colors"
                 >
-                  My Links
+                  All Links
+                </Link>
+                <Link
+                  href="/dashboard/projects"
+                  className="text-sm font-medium text-gray-300 hover:text-neon-cyan transition-colors"
+                >
+                  Video Projects
                 </Link>
                 <Link
                   href="/dashboard/analytics"

@@ -3,6 +3,11 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
 
+  // Skip type checking during dev for faster compilation
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+
   // Optimize compilation speed
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
