@@ -2,8 +2,9 @@
 
 import { VideoProject } from '@/lib/video-projects-api';
 import { GlassCard } from './ui/GlassCard';
-import { TrendingUp, Youtube, ExternalLink, Link2, Eye, Pencil } from 'lucide-react';
+import { TrendingUp, Youtube, ExternalLink, Link2, Eye, Pencil, Copy, Check } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 interface VideoProjectCardProps {
   project: VideoProject;
@@ -14,10 +15,25 @@ interface VideoProjectCardProps {
 
 export function VideoProjectCard({ project, links = [], onManageLinks, onEdit }: VideoProjectCardProps) {
   const router = useRouter();
+  const [copiedLink, setCopiedLink] = useState<string | null>(null);
 
   const handleClick = () => {
     // Navigate to project analytics page
     router.push(`/dashboard/projects/${project.id}/analytics`);
+  };
+
+  const copyToClipboard = async (shortCode: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const baseUrl = window.location.origin;
+    const fullUrl = `${baseUrl}/${shortCode}`;
+
+    try {
+      await navigator.clipboard.writeText(fullUrl);
+      setCopiedLink(shortCode);
+      setTimeout(() => setCopiedLink(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
   };
 
   // YouTube thumbnail fallback
@@ -115,16 +131,31 @@ export function VideoProjectCard({ project, links = [], onManageLinks, onEdit }:
             {links.slice(0, 3).map((link, idx) => (
               <div
                 key={link.short_code}
-                className="glass px-3 py-1.5 rounded-full text-xs font-medium text-white border border-white/10 flex items-center gap-2 animate-fade-in"
+                className="glass px-3 py-1.5 rounded-full text-xs font-medium text-white border border-white/10 flex items-center gap-2 animate-fade-in group/pill hover:glass-strong transition-all"
                 style={{ animationDelay: `${idx * 50}ms` }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  router.push(`/dashboard/analytics?code=${link.short_code}`);
-                }}
               >
                 <div className="w-1.5 h-1.5 rounded-full bg-neon-cyan animate-pulse" />
-                <span>/{link.short_code}</span>
+                <span
+                  className="cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    router.push(`/dashboard/analytics?code=${link.short_code}`);
+                  }}
+                >
+                  /{link.short_code}
+                </span>
                 <span className="text-neon-cyan font-bold">{link.click_count}</span>
+                <button
+                  onClick={(e) => copyToClipboard(link.short_code, e)}
+                  className="ml-1 hover:scale-110 transition-transform"
+                  title="Copy link"
+                >
+                  {copiedLink === link.short_code ? (
+                    <Check className="w-3 h-3 text-green-400" />
+                  ) : (
+                    <Copy className="w-3 h-3 text-gray-400 group-hover/pill:text-neon-cyan transition-colors" />
+                  )}
+                </button>
               </div>
             ))}
             {links.length > 3 && (

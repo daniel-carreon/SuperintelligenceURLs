@@ -95,7 +95,7 @@ export default function VideoProjectsPage() {
         <nav className="glass-strong border-b border-white/10 sticky top-0 z-50 backdrop-blur-xl">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-20">
-              <Link href="/" className="flex items-center gap-3 group">
+              <div className="flex items-center gap-3 group">
                 <div className="w-10 h-10 gradient-holographic rounded-xl flex items-center justify-center transform group-hover:rotate-180 transition-transform duration-500">
                   <Video className="w-6 h-6 text-white" />
                 </div>
@@ -105,16 +105,13 @@ export default function VideoProjectsPage() {
                   </span>
                   <span className="text-xs text-gray-400">Organize links by video</span>
                 </div>
-              </Link>
+              </div>
               <div className="flex items-center gap-3">
                 <Link href="/dashboard/links">
                   <Button variant="secondary">
                     <Link2 className="w-4 h-4 mr-2" />
                     All Links
                   </Button>
-                </Link>
-                <Link href="/">
-                  <Button variant="secondary">← Home</Button>
                 </Link>
                 <Button variant="ghost" size="sm" onClick={handleLogout}>
                   <LogOut className="w-4 h-4 mr-2" />
@@ -211,38 +208,6 @@ export default function VideoProjectsPage() {
                   </button>
                 </div>
               ))}
-            </div>
-          )}
-
-          {/* Stats Footer */}
-          {projects.length > 0 && (
-            <div className="mt-12 glass-strong rounded-2xl p-6 border border-neon-cyan/20">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 text-center">
-                <div>
-                  <div className="text-3xl font-black text-gradient-holographic mb-1">
-                    {projects.length}
-                  </div>
-                  <div className="text-sm text-gray-400">Total Projects</div>
-                </div>
-                <div>
-                  <div className="text-3xl font-black text-neon-cyan mb-1">
-                    {projects.reduce((sum, p) => sum + (p.total_links || 0), 0)}
-                  </div>
-                  <div className="text-sm text-gray-400">Total Links</div>
-                </div>
-                <div>
-                  <div className="text-3xl font-black text-neon-purple mb-1">
-                    {projects.reduce((sum, p) => sum + (p.total_clicks || 0), 0)}
-                  </div>
-                  <div className="text-sm text-gray-400">Total Clicks</div>
-                </div>
-                <div>
-                  <div className="text-3xl font-black text-neon-pink mb-1">
-                    {projects.reduce((sum, p) => sum + (p.unique_visitors || 0), 0)}
-                  </div>
-                  <div className="text-sm text-gray-400">Unique Visitors</div>
-                </div>
-              </div>
             </div>
           )}
         </div>

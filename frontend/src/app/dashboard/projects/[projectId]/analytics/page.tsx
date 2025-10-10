@@ -6,8 +6,9 @@ import { getProjectAnalytics, getProjectLinks, type VideoProjectAnalytics, type 
 import { getAnalytics, type AnalyticsResponse } from '@/lib/api';
 import { GlassCard } from '@/components/ui/GlassCard';
 import Button from '@/components/ui/Button';
+import { AddLinksToProjectModal } from '@/components/AddLinksToProjectModal';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { TrendingUp, Globe, Monitor, ArrowLeft, Youtube, Users, MapPin } from 'lucide-react';
+import { TrendingUp, Globe, Monitor, ArrowLeft, Youtube, Users, MapPin, Plus, Link2 } from 'lucide-react';
 import Link from 'next/link';
 
 // Holographic color palette
@@ -22,6 +23,7 @@ export default function ProjectAnalyticsPage() {
   const [projectLinks, setProjectLinks] = useState<ProjectLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showAddLinksModal, setShowAddLinksModal] = useState(false);
 
   useEffect(() => {
     if (projectId) {
@@ -295,41 +297,92 @@ export default function ProjectAnalyticsPage() {
 
           {/* Links Table */}
           <GlassCard glow="cyan">
-            <h3 className="text-lg font-bold text-white mb-6">
-              All Links in Project
-            </h3>
-            <div className="space-y-3">
-              {projectLinks.map((link) => (
-                <div
-                  key={link.id}
-                  className="glass hover:glass-strong rounded-lg p-4 transition-all cursor-pointer"
-                  onClick={() => router.push(`/dashboard/analytics?code=${link.short_code}`)}
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-bold text-white">
+                All Links in Project
+              </h3>
+              {projectLinks.length > 0 && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => setShowAddLinksModal(true)}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-1">
-                        <span className="text-lg font-black text-gradient-holographic">
-                          /{link.short_code}
-                        </span>
-                        {link.title && (
-                          <span className="glass px-2 py-0.5 rounded text-xs font-semibold text-white">
-                            {link.title}
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Links
+                </Button>
+              )}
+            </div>
+
+            {projectLinks.length === 0 ? (
+              <div className="text-center py-16 relative overflow-hidden">
+                <div className="absolute inset-0 gradient-holographic opacity-5" />
+                <div className="relative z-10">
+                  <div className="w-20 h-20 gradient-holographic rounded-2xl flex items-center justify-center mx-auto mb-6 animate-float">
+                    <Link2 className="w-10 h-10 text-white" />
+                  </div>
+                  <h4 className="text-xl font-bold text-white mb-3">
+                    No links yet
+                  </h4>
+                  <p className="text-gray-400 mb-8 max-w-md mx-auto">
+                    Add your first link to this project to start tracking analytics
+                  </p>
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    onClick={() => setShowAddLinksModal(true)}
+                  >
+                    <Plus className="w-5 h-5 mr-2" />
+                    Add Your First Link
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {projectLinks.map((link) => (
+                  <div
+                    key={link.id}
+                    className="glass hover:glass-strong rounded-lg p-4 transition-all cursor-pointer"
+                    onClick={() => router.push(`/dashboard/analytics?code=${link.short_code}`)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-1">
+                          <span className="text-lg font-black text-gradient-holographic">
+                            /{link.short_code}
                           </span>
-                        )}
+                          {link.title && (
+                            <span className="glass px-2 py-0.5 rounded text-xs font-semibold text-white">
+                              {link.title}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-400 truncate">{link.original_url}</p>
                       </div>
-                      <p className="text-sm text-gray-400 truncate">{link.original_url}</p>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-neon-cyan">{link.click_count}</div>
-                      <div className="text-xs text-gray-500">clicks</div>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold text-neon-cyan">{link.click_count}</div>
+                        <div className="text-xs text-gray-500">clicks</div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </GlassCard>
         </div>
       </div>
+
+      {/* Add Links Modal */}
+      {showAddLinksModal && (
+        <AddLinksToProjectModal
+          projectId={projectId}
+          projectTitle={projectAnalytics?.title || 'Video Project'}
+          onClose={() => setShowAddLinksModal(false)}
+          onSuccess={() => {
+            setShowAddLinksModal(false);
+            loadAnalytics(); // Reload analytics and links
+          }}
+        />
+      )}
     </div>
   );
 }

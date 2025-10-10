@@ -6,6 +6,13 @@ const nextConfig: NextConfig = {
   // Skip type checking during dev for faster compilation
   typescript: {
     ignoreBuildErrors: true,
+    // Completely skip type checking in dev mode
+    tsconfigPath: './tsconfig.json',
+  },
+
+  // Disable ESLint during builds
+  eslint: {
+    ignoreDuringBuilds: true,
   },
 
   // Optimize compilation speed

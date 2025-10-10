@@ -6,30 +6,30 @@
 const TOKEN_KEY = 'auth_token';
 
 /**
- * Save authentication token to sessionStorage
+ * Save authentication token to localStorage (persists across page reloads)
  */
 export function saveToken(token: string): void {
   if (typeof window !== 'undefined') {
-    sessionStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(TOKEN_KEY, token);
   }
 }
 
 /**
- * Get authentication token from sessionStorage
+ * Get authentication token from localStorage
  */
 export function getToken(): string | null {
   if (typeof window !== 'undefined') {
-    return sessionStorage.getItem(TOKEN_KEY);
+    return localStorage.getItem(TOKEN_KEY);
   }
   return null;
 }
 
 /**
- * Remove authentication token from sessionStorage
+ * Remove authentication token from localStorage
  */
 export function removeToken(): void {
   if (typeof window !== 'undefined') {
-    sessionStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(TOKEN_KEY);
   }
 }
 
