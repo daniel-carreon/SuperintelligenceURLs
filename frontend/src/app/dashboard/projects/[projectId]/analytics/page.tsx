@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getProjectAnalytics, getProjectLinks, type VideoProjectAnalytics, type ProjectLink } from '@/lib/video-projects-api';
+import { getProjectAnalytics, getProjectLinks, removeLinkFromProject, type VideoProjectAnalytics, type ProjectLink } from '@/lib/video-projects-api';
 import { getAnalytics, type AnalyticsResponse } from '@/lib/api';
 import { GlassCard } from '@/components/ui/GlassCard';
 import Button from '@/components/ui/Button';
 import { AddLinksToProjectModal } from '@/components/AddLinksToProjectModal';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { TrendingUp, Globe, Monitor, ArrowLeft, Youtube, Users, MapPin, Plus, Link2 } from 'lucide-react';
+import { TrendingUp, Globe, Monitor, ArrowLeft, Youtube, Users, MapPin, Plus, Link2, Copy, Trash2, Check } from 'lucide-react';
 import Link from 'next/link';
 
 // Holographic color palette
@@ -24,6 +24,8 @@ export default function ProjectAnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showAddLinksModal, setShowAddLinksModal] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (projectId) {
@@ -47,6 +49,38 @@ export default function ProjectAnalyticsPage() {
       setError(err.message || 'Failed to load analytics');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCopyUrl = async (e: React.MouseEvent, shortCode: string) => {
+    e.stopPropagation();
+    const baseUrl = window.location.origin.replace('dashboard/projects', '');
+    const shortUrl = `${baseUrl}/${shortCode}`;
+
+    try {
+      await navigator.clipboard.writeText(shortUrl);
+      setCopiedId(shortCode);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
+  const handleRemoveLink = async (e: React.MouseEvent, linkId: string, shortCode: string) => {
+    e.stopPropagation();
+
+    if (!confirm(`Are you sure you want to remove /${shortCode} from this project?`)) {
+      return;
+    }
+
+    setDeletingId(linkId);
+    try {
+      await removeLinkFromProject(linkId, projectId);
+      await loadAnalytics(); // Reload to reflect changes
+    } catch (err: any) {
+      alert(err.message || 'Failed to remove link');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -344,8 +378,8 @@ export default function ProjectAnalyticsPage() {
                     className="glass hover:glass-strong rounded-lg p-4 transition-all cursor-pointer"
                     onClick={() => router.push(`/dashboard/analytics?code=${link.short_code}`)}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 mb-1">
                           <span className="text-lg font-black text-gradient-holographic">
                             /{link.short_code}
@@ -358,9 +392,37 @@ export default function ProjectAnalyticsPage() {
                         </div>
                         <p className="text-sm text-gray-400 truncate">{link.original_url}</p>
                       </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-neon-cyan">{link.click_count}</div>
-                        <div className="text-xs text-gray-500">clicks</div>
+
+                      <div className="flex items-center gap-3">
+                        {/* Click count */}
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-neon-cyan">{link.click_count}</div>
+                          <div className="text-xs text-gray-500">clicks</div>
+                        </div>
+
+                        {/* Action buttons */}
+                        <div className="flex gap-2">
+                          <button
+                            onClick={(e) => handleCopyUrl(e, link.short_code)}
+                            className="p-2 glass hover:glass-strong rounded-lg transition-all group relative"
+                            title="Copy URL"
+                          >
+                            {copiedId === link.short_code ? (
+                              <Check className="w-4 h-4 text-green-400" />
+                            ) : (
+                              <Copy className="w-4 h-4 text-gray-400 group-hover:text-neon-cyan" />
+                            )}
+                          </button>
+
+                          <button
+                            onClick={(e) => handleRemoveLink(e, link.id, link.short_code)}
+                            disabled={deletingId === link.id}
+                            className="p-2 glass hover:glass-strong rounded-lg transition-all group relative disabled:opacity-50"
+                            title="Remove from project"
+                          >
+                            <Trash2 className="w-4 h-4 text-gray-400 group-hover:text-red-400" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
